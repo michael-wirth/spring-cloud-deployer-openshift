@@ -1,17 +1,13 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import com.google.common.collect.ImmutableMap;
-import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.hamcrest.Matchers;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
@@ -20,8 +16,6 @@ import org.springframework.cloud.deployer.spi.task.LaunchState;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.deployer.spi.test.AbstractTaskLauncherIntegrationTests;
 import org.springframework.cloud.deployer.spi.test.Timeout;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
@@ -29,16 +23,10 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.eventually;
 
 @RunWith(SpringRunner.class)
@@ -46,7 +34,8 @@ import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.even
 @ContextConfiguration(classes = {
 		MavenOpenShiftTaskLauncherWithJobIntegrationTest.Config.class,
 		OpenShiftAutoConfiguration.class })
-@TestPropertySource(properties = { "spring.cloud.deployer.openshift.create-job=true" })
+@TestPropertySource(properties = { "spring.cloud.deployer.openshift.create-job=true",
+		"maven.remote-repositories.spring.url=http://repo.spring.io/libs-snapshot" })
 public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
 		extends AbstractTaskLauncherIntegrationTests {
 
@@ -90,14 +79,15 @@ public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
 					"Failed to determine which version of integration-test-app to use",
 					e);
 		}
-		return new MavenResource.Builder().groupId("org.springframework.cloud")
+		return new MavenResource.Builder(mavenProperties)
+				.groupId("org.springframework.cloud")
 				.artifactId("spring-cloud-deployer-spi-test-app").classifier("exec")
 				.version(properties.getProperty("version")).extension("jar").build();
 	}
 
 	@Test
 	@Override
-	@Ignore("Currently reported as completed instead of cancelled")
+	// @Ignore("Currently reported as completed instead of cancelled")
 	public void testSimpleCancel() throws InterruptedException {
 		super.testSimpleCancel();
 	}
@@ -161,20 +151,21 @@ public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
 				timeout.maxAttempts, timeout.pause));
 	}
 
-	@Configuration
-	public static class Config {
-
-		@Bean
-		@ConfigurationProperties("maven")
-		public MavenProperties mavenProperties() {
-			MavenProperties mavenProperties = new MavenProperties();
-			mavenProperties.setRemoteRepositories(
-					ImmutableMap.of("maven.remote-repositories.spring.url",
-							new MavenProperties.RemoteRepository(
-									"http://repo.spring.io/libs-snapshot")));
-			return mavenProperties;
-		}
-
-	}
+	// @Configuration
+	// public static class Config {
+	//
+	// @Bean
+	// @Primary
+	// @ConfigurationProperties("maven")
+	// public MavenProperties mavenProperties() {
+	// MavenProperties mavenProperties = new MavenProperties();
+	// mavenProperties.setRemoteRepositories(
+	// ImmutableMap.of("maven.remote-repositories.spring.url",
+	// new MavenProperties.RemoteRepository(
+	// "http://repo.spring.io/libs-snapshot")));
+	// return mavenProperties;
+	// }
+	//
+	// }
 
 }

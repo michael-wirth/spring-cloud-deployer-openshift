@@ -1,18 +1,7 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.springframework.cloud.deployer.spi.app.DeploymentState.deployed;
-import static org.springframework.cloud.deployer.spi.app.DeploymentState.failed;
-import static org.springframework.cloud.deployer.spi.app.DeploymentState.unknown;
-import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.eventually;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
+import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.ClassRule;
@@ -34,13 +23,15 @@ import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HostPathVolumeSource;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.openshift.client.OpenShiftClient;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.springframework.cloud.deployer.spi.app.DeploymentState.*;
+import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.eventually;
 
 /**
  * Copied <a href="https://github.com/spring-cloud/spring-cloud-deployer-kubernetes">from
@@ -165,7 +156,7 @@ public class OpenShiftAppDeployerIntegrationTest
 	}
 
 	@Test
-	public void testDeploymentWithMountedHostPathVolume() throws IOException {
+	public void testDeploymentWithMountedVolume() {
 		log.info("Testing {}...", "DeploymentWithMountedVolume");
 		String hostPath = "/tmp/" + randomName() + '/';
 		String containerPath = "/tmp/";
@@ -175,12 +166,11 @@ public class OpenShiftAppDeployerIntegrationTest
 		//@formatter:off
 		openShiftDeployerProperties.setVolumes(Collections.singletonList(
 			new VolumeBuilder()
-				.withHostPath(new HostPathVolumeSource(hostPath))
 				.withName(mountName)
 				.build()));
 		//@formatter:on
 		openShiftDeployerProperties.setVolumeMounts(Collections
-				.singletonList(new VolumeMount(hostPath, mountName, false, null)));
+				.singletonList(new VolumeMount(hostPath, null, mountName, false, null)));
 		ContainerFactory containerFactory = new OpenShiftContainerFactory(
 				new OpenShiftDeployerProperties(),
 				new VolumeMountFactory(openShiftDeployerProperties));
@@ -210,8 +200,7 @@ public class OpenShiftAppDeployerIntegrationTest
 			.findAny()
 			.orElseThrow(() -> new AssertionError("Volume not mounted"));
 		//@formatter:on
-		assertThat(volume.getHostPath(), is(notNullValue()));
-		assertThat(hostPath, is(volume.getHostPath().getPath()));
+		assertThat(volume.getHostPath(), is(nullValue()));
 
 		log.info("Undeploying {}...", deploymentId);
 		timeout = undeploymentTimeout();

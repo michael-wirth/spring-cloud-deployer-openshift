@@ -1,19 +1,17 @@
 package org.springframework.cloud.deployer.spi.openshift.resources.volumes;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-
-import java.util.List;
-
+import com.google.common.collect.ImmutableMap;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import org.junit.Test;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
 import org.springframework.core.io.Resource;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.List;
 
-import io.fabric8.kubernetes.api.model.VolumeMount;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class VolumeMountFactoryTest {
 
@@ -30,7 +28,7 @@ public class VolumeMountFactoryTest {
 		List<VolumeMount> volumeMounts = volumeMountFactory.addObject(request, "1");
 
 		assertThat(volumeMounts).first()
-				.isEqualTo(new VolumeMount("/mnt/test", "testVolume", null, null));
+				.isEqualTo(new VolumeMount("/mnt/test", null, "testVolume", null, null));
 	}
 
 	@Test
@@ -44,7 +42,7 @@ public class VolumeMountFactoryTest {
 		List<VolumeMount> volumeMounts = volumeMountFactory.addObject(request, "1");
 
 		assertThat(volumeMounts).first()
-				.isEqualTo(new VolumeMount("/mnt/test", "testVolume", true, null));
+				.isEqualTo(new VolumeMount("/mnt/test", null, "testVolume", true, null));
 	}
 
 }

@@ -1,9 +1,13 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
+
+import java.util.List;
+import java.util.Objects;
 
 @ConfigurationProperties(prefix = "spring.cloud.deployer.openshift")
 public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
@@ -60,7 +64,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	 * The default S2I build image to use for Maven resource. See
 	 * https://github.com/fabric8io-images/s2i
 	 */
-	private String defaultS2iImage = "fabric8/s2i-java:2.2";
+	private String defaultS2iImage = "fabric8/s2i-java:3.0-java8";
 
 	public boolean isForceBuild() {
 		return forceBuild;
@@ -129,5 +133,18 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	public void setDefaultS2iImage(String defaultS2iImage) {
 		this.defaultS2iImage = defaultS2iImage;
 	}
+
+//  requrest host mount permission
+//	@Override
+//	public void setVolumes(List<Volume> volumes) {
+//		volumes.stream().map(Volume::getHostPath).filter(Objects::nonNull).findFirst()
+//				.ifPresent(hostPathVolumeSource -> {
+//					throw new IllegalArgumentException(
+//							"HostPath for volume is not allowed on Openshift. ["
+//									+ hostPathVolumeSource.toString() + "]");
+//				});
+//
+//		super.setVolumes(volumes);
+//	}
 
 }

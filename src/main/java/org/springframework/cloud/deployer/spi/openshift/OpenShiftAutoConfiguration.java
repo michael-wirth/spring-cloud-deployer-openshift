@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -40,6 +41,7 @@ public class OpenShiftAutoConfiguration {
 			KubernetesClient kubernetesClient, ContainerFactory containerFactory,
 			MavenResourceJarExtractor mavenResourceJarExtractor,
 			ResourceHash resourceHash) {
+
 		return new ResourceAwareOpenShiftAppDeployer(
 				new OpenShiftAppDeployer(properties, kubernetesClient, containerFactory),
 				new MavenOpenShiftAppDeployer(properties, kubernetesClient,
@@ -88,7 +90,15 @@ public class OpenShiftAutoConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean(ConfigServicePropertySourceLocator.class)
 	public VolumeMountFactory volumeMountFactory(
+			OpenShiftDeployerProperties openShiftDeployerProperties) {
+		return new VolumeMountFactory(openShiftDeployerProperties);
+	}
+
+	@Bean
+	@ConditionalOnBean(ConfigServicePropertySourceLocator.class)
+	public VolumeMountFactory volumeMountConfigServiceFactory(
 			ConfigServicePropertySourceLocator configServicePropertySourceLocator,
 			OpenShiftDeployerProperties openShiftDeployerProperties) {
 		return new VolumeMountConfigServerFactory(configServicePropertySourceLocator,

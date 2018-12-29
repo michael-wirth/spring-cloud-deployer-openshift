@@ -49,6 +49,7 @@ public class MavenResourceProjectExtractor {
 		DefaultProjectBuildingRequest request = new DefaultProjectBuildingRequest();
 		request.setRepositorySession(session);
 		request.setResolveDependencies(false);
+		request.setSystemProperties(System.getProperties());
 		ProjectBuildingResult result = projectBuilder
 				.build(toArtifact((MavenResource) mavenArtifactResource), request);
 

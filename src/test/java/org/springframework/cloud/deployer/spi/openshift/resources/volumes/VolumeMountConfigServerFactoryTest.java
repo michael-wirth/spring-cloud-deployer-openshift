@@ -1,10 +1,7 @@
 package org.springframework.cloud.deployer.spi.openshift.resources.volumes;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-
-import java.util.List;
-
+import com.google.common.collect.ImmutableMap;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.cloud.config.client.ConfigServicePropertySourceLocator;
@@ -16,9 +13,10 @@ import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.mock.env.MockPropertySource;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.List;
 
-import io.fabric8.kubernetes.api.model.VolumeMount;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class VolumeMountConfigServerFactoryTest {
 
@@ -50,7 +48,7 @@ public class VolumeMountConfigServerFactoryTest {
 		List<VolumeMount> volumeMounts = volumeMountFactory.addObject(request, "1");
 
 		assertThat(volumeMounts).first()
-				.isEqualTo(new VolumeMount("/mnt/test", "testVolume", null, null));
+				.isEqualTo(new VolumeMount("/mnt/test", null, "testVolume", null, null));
 	}
 
 	@Test
@@ -65,7 +63,7 @@ public class VolumeMountConfigServerFactoryTest {
 		List<VolumeMount> volumeMounts = volumeMountFactory.addObject(request, "1");
 
 		assertThat(volumeMounts).first().isEqualTo(
-				new VolumeMount("/mnt/test/overridden", "testVolume", null, null));
+				new VolumeMount("/mnt/test/overridden", null, "testVolume", null, null));
 	}
 
 	@Test
@@ -86,7 +84,7 @@ public class VolumeMountConfigServerFactoryTest {
 		List<VolumeMount> volumeMounts = volumeMountFactory.addObject(request, "1");
 
 		assertThat(volumeMounts).first().isEqualTo(
-				new VolumeMount("/mnt/test/deployer", "testVolume", null, null));
+				new VolumeMount("/mnt/test/deployer", null, "testVolume", null, null));
 	}
 
 }

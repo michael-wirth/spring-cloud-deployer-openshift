@@ -1,36 +1,33 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import java.io.IOException;
-import java.util.Properties;
-import java.util.UUID;
-
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.deployer.spi.test.AbstractTaskLauncherIntegrationTests;
 import org.springframework.cloud.deployer.spi.test.Timeout;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.google.common.collect.ImmutableMap;
-
-import io.fabric8.openshift.client.OpenShiftClient;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.UUID;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ContextConfiguration(classes = { MavenOpenShiftTaskLauncherIntegrationTest.Config.class,
 		OpenShiftAutoConfiguration.class })
+@TestPropertySource(properties = {
+		"maven.remote-repositories.spring.url=http://repo.spring.io/libs-snapshot" })
 public class MavenOpenShiftTaskLauncherIntegrationTest
 		extends AbstractTaskLauncherIntegrationTests {
 
@@ -42,6 +39,9 @@ public class MavenOpenShiftTaskLauncherIntegrationTest
 
 	@Autowired
 	private ResourceAwareOpenShiftTaskLauncher taskLauncher;
+
+	@Autowired
+	private MavenProperties mavenProperties;
 
 	@Override
 	protected TaskLauncher provideTaskLauncher() {
@@ -78,25 +78,10 @@ public class MavenOpenShiftTaskLauncherIntegrationTest
 					"Failed to determine which version of integration-test-app to use",
 					e);
 		}
-		return new MavenResource.Builder().groupId("org.springframework.cloud")
+		return new MavenResource.Builder(mavenProperties)
+				.groupId("org.springframework.cloud")
 				.artifactId("spring-cloud-deployer-spi-test-app").classifier("exec")
 				.version(properties.getProperty("version")).extension("jar").build();
-	}
-
-	@Configuration
-	public static class Config {
-
-		@Bean
-		@ConfigurationProperties("maven")
-		public MavenProperties mavenProperties() {
-			MavenProperties mavenProperties = new MavenProperties();
-			mavenProperties.setRemoteRepositories(
-					ImmutableMap.of("maven.remote-repositories.spring.url",
-							new MavenProperties.RemoteRepository(
-									"http://repo.spring.io/libs-snapshot")));
-			return mavenProperties;
-		}
-
 	}
 
 }

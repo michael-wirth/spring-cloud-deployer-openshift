@@ -1,30 +1,29 @@
 package org.springframework.cloud.deployer.spi.openshift.resources.volumes;
 
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
+import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
+import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
+import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
+import org.yaml.snakeyaml.Yaml;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.bind.YamlConfigurationFactory;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
-import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
-import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
-import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
-
-import io.fabric8.kubernetes.api.model.VolumeMount;
-
 /**
  * Use the Fabric8 {@link VolumeMount} model to allow all volume plugins currently
  * supported. Volume mount deployment properties are specified in YAML format:
  *
  * <code>
- *     spring.cloud.deployer.kubernetes.volumeMounts=[{name: 'testhostpath', mountPath: '/test/hostPath'},
- *     	{name: 'testpvc', mountPath: '/test/pvc'}, {name: 'testnfs', mountPath: '/test/nfs'}]
+ * spring.cloud.deployer.kubernetes.volumeMounts=[{name: 'testhostpath', mountPath: '/test/hostPath'},
+ * {name: 'testpvc', mountPath: '/test/pvc'}, {name: 'testnfs', mountPath: '/test/nfs'}]
  * </code>
- *
+ * <p>
  * Volume mounts can be specified as deployer properties as well as app deployment
  * properties. Deployment properties override deployer properties.
  */
@@ -57,14 +56,11 @@ public class VolumeMountFactory implements ObjectFactory<List<VolumeMount>> {
 						StringUtils.EMPTY);
 		if (!org.springframework.util.StringUtils
 				.isEmpty(volumeMountDeploymentProperty)) {
-			YamlConfigurationFactory<KubernetesDeployerProperties> volumeMountYamlConfigurationFactory = new YamlConfigurationFactory<>(
-					KubernetesDeployerProperties.class);
-			volumeMountYamlConfigurationFactory
-					.setYaml("{ volumeMounts: " + volumeMountDeploymentProperty + " }");
 			try {
-				volumeMountYamlConfigurationFactory.afterPropertiesSet();
-				volumeMounts.addAll(volumeMountYamlConfigurationFactory.getObject()
-						.getVolumeMounts());
+				KubernetesDeployerProperties kubernetesDeployerProperties = new Yaml()
+						.loadAs("{ volumeMounts: " + volumeMountDeploymentProperty + " }",
+								KubernetesDeployerProperties.class);
+				volumeMounts.addAll(kubernetesDeployerProperties.getVolumeMounts());
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException(String.format(

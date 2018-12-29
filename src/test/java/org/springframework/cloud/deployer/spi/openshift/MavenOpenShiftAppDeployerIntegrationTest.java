@@ -1,32 +1,13 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
-import com.google.common.collect.ImmutableMap;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HostPathVolumeSource;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
@@ -39,24 +20,30 @@ import org.springframework.cloud.deployer.spi.openshift.resources.pod.OpenShiftC
 import org.springframework.cloud.deployer.spi.openshift.resources.volumes.VolumeMountFactory;
 import org.springframework.cloud.deployer.spi.test.AbstractAppDeployerIntegrationTests;
 import org.springframework.cloud.deployer.spi.test.Timeout;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.springframework.cloud.deployer.spi.app.DeploymentState.deployed;
-import static org.springframework.cloud.deployer.spi.app.DeploymentState.failed;
-import static org.springframework.cloud.deployer.spi.app.DeploymentState.unknown;
+import static org.springframework.cloud.deployer.spi.app.DeploymentState.*;
 import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.eventually;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ContextConfiguration(classes = { MavenOpenShiftAppDeployerIntegrationTest.Config.class,
 		OpenShiftAutoConfiguration.class })
+@TestPropertySource(properties = {
+		"maven.remote-repositories.spring.url=http://repo.spring.io/libs-snapshot" })
 public class MavenOpenShiftAppDeployerIntegrationTest
 		extends AbstractAppDeployerIntegrationTests {
 
@@ -78,13 +65,13 @@ public class MavenOpenShiftAppDeployerIntegrationTest
 	@Autowired
 	private ResourceHash resourceHash;
 
+	@Autowired
+	private MavenProperties mavenProperties;
+
 	@Override
 	protected AppDeployer provideAppDeployer() {
 		return appDeployer;
 	}
-
-	@Autowired
-	private MavenProperties mavenProperties;
 
 	@Override
 	protected Resource testApplication() {
@@ -217,12 +204,12 @@ public class MavenOpenShiftAppDeployerIntegrationTest
 		//@formatter:off
 		openShiftDeployerProperties.setVolumes(Collections.singletonList(
 			new VolumeBuilder()
-				.withHostPath(new HostPathVolumeSource(hostPath))
+//				.withHostPath(new HostPathVolumeSource(hostPath, null))
 				.withName(mountName)
 				.build()));
 		//@formatter:on
 		openShiftDeployerProperties.setVolumeMounts(Collections
-				.singletonList(new VolumeMount(hostPath, mountName, false, null)));
+				.singletonList(new VolumeMount(hostPath, null, mountName, false, null)));
 		ContainerFactory containerFactory = new OpenShiftContainerFactory(
 				new OpenShiftDeployerProperties(),
 				new VolumeMountFactory(openShiftDeployerProperties));
@@ -253,8 +240,6 @@ public class MavenOpenShiftAppDeployerIntegrationTest
 			.findAny()
 			.orElseThrow(() -> new AssertionError("Volume not mounted"));
 		//@formatter:on
-		assertThat(volume.getHostPath(), is(notNullValue()));
-		assertThat(hostPath, is(volume.getHostPath().getPath()));
 
 		log.info("Undeploying {}...", deploymentId);
 		timeout = undeploymentTimeout();
@@ -320,22 +305,6 @@ public class MavenOpenShiftAppDeployerIntegrationTest
 	@Override
 	protected Timeout deploymentTimeout() {
 		return new Timeout(40, 5000);
-	}
-
-	@TestConfiguration
-	public static class Config {
-
-		@Bean
-		@ConfigurationProperties("maven")
-		public MavenProperties mavenProperties() {
-			MavenProperties mavenProperties = new MavenProperties();
-			mavenProperties.setRemoteRepositories(
-					ImmutableMap.of("maven.remote-repositories.spring.url",
-							new MavenProperties.RemoteRepository(
-									"http://repo.spring.io/libs-snapshot")));
-			return mavenProperties;
-		}
-
 	}
 
 }

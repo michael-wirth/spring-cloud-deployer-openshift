@@ -41,7 +41,7 @@ public class VolumeFactoryTest {
 
 		assertThat(volumes).containsOnly(
 				new VolumeBuilder().withName("testhostpath")
-						.withNewHostPath("/test/override/hostPath").build(),
+						.withNewHostPath("/test/override/hostPath", null).build(),
 				new VolumeBuilder().withName("testpvc")
 						.withNewPersistentVolumeClaim("testClaim", true).build(),
 				new VolumeBuilder().withName("testnfs")

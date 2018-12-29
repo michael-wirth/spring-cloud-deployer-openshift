@@ -1,24 +1,19 @@
 package org.springframework.cloud.deployer.spi.openshift.resources.volumes;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.bind.PropertiesConfigurationFactory;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.config.client.ConfigServicePropertySourceLocator;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.env.StandardEnvironment;
 
-import io.fabric8.kubernetes.api.model.VolumeMount;
+import java.util.*;
 
 public class VolumeMountConfigServerFactory extends VolumeMountFactory {
 
@@ -52,23 +47,20 @@ public class VolumeMountConfigServerFactory extends VolumeMountFactory {
 
 		PropertySource<?> propertySource = configServicePropertySourceLocator
 				.locate(appEnvironment);
-		MutablePropertySources propertySources = new MutablePropertySources();
-		propertySources.addFirst(propertySource);
-
-		try {
-			PropertiesConfigurationFactory<VolumeMountProperties> factory = new PropertiesConfigurationFactory<>(
-					new VolumeMountProperties());
-			factory.setPropertySources(propertySources);
-			factory.afterPropertiesSet();
-			VolumeMountProperties configVolumeProperties = factory.getObject();
-			volumeMounts.addAll(configVolumeProperties.getVolumeMounts());
+		if (propertySource != null) {
+			try {
+				Binder binder = new Binder(
+						ConfigurationPropertySources.from(propertySource));
+				VolumeMountProperties configVolumeProperties = binder
+						.bind("", VolumeMountProperties.class).get();
+				volumeMounts.addAll(configVolumeProperties.getVolumeMounts());
+			}
+			catch (Exception e) {
+				logger.warn(
+						"Could not get volume mounts configuration for app '{}' from config server: '{}'",
+						appId, e.getMessage());
+			}
 		}
-		catch (Exception e) {
-			logger.warn(
-					"Could not get volume mounts configuration for app '{}' from config server: '{}'",
-					appId, e.getMessage());
-		}
-
 		return volumeMounts;
 	}
 
