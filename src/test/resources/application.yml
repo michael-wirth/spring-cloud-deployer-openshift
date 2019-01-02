@@ -8,5 +8,4 @@ spring:
     deployer:
       openshift:
         environmentVariables:
-          - SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS=${KAFKA_BROKER_SERVICE_HOST}:${KAFKA_BROKER_SERVICE_PORT}
 

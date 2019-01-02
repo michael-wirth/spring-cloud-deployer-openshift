@@ -64,7 +64,9 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	 * The default S2I build image to use for Maven resource. See
 	 * https://github.com/fabric8io-images/s2i
 	 */
-	private String defaultS2iImage = "fabric8/s2i-java:3.0-java8";
+	private String defaultS2iImage = "tagedieb/s2i-java-centos:3.0.1";
+
+	private String defaultS2iImageCmd = "/usr/local/s2i/run";
 
 	public boolean isForceBuild() {
 		return forceBuild;
@@ -134,17 +136,12 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 		this.defaultS2iImage = defaultS2iImage;
 	}
 
-//  requrest host mount permission
-//	@Override
-//	public void setVolumes(List<Volume> volumes) {
-//		volumes.stream().map(Volume::getHostPath).filter(Objects::nonNull).findFirst()
-//				.ifPresent(hostPathVolumeSource -> {
-//					throw new IllegalArgumentException(
-//							"HostPath for volume is not allowed on Openshift. ["
-//									+ hostPathVolumeSource.toString() + "]");
-//				});
-//
-//		super.setVolumes(volumes);
-//	}
+	public String getDefaultS2iImageCmd() {
+		return defaultS2iImageCmd;
+	}
+
+	public void setDefaultS2iImageCmd(String defaultS2iImageCmd) {
+		this.defaultS2iImageCmd = defaultS2iImageCmd;
+	}
 
 }

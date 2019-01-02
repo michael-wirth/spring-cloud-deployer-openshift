@@ -1,6 +1,7 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.springframework.boot.Banner;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,7 +16,7 @@ import org.springframework.context.annotation.Import;
  * available.
  */
 public class OpenShiftTestSupport
-		extends AbstractExternalResourceTestSupport<KubernetesClient> {
+		extends AbstractExternalResourceTestSupport<OpenShiftClient> {
 
 	private ConfigurableApplicationContext context;
 
@@ -32,7 +33,7 @@ public class OpenShiftTestSupport
 	protected void obtainResource() throws Exception {
 		context = new SpringApplicationBuilder().web(WebApplicationType.NONE)
 				.bannerMode(Banner.Mode.OFF).sources(Config.class).run();
-		resource = context.getBean(KubernetesClient.class);
+		resource = context.getBean(OpenShiftClient.class);
 		resource.namespaces().list();
 	}
 

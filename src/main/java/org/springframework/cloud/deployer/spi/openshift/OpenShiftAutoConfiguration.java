@@ -1,7 +1,7 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -21,6 +21,7 @@ import org.springframework.cloud.deployer.spi.openshift.resources.volumes.Volume
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 
 /**
@@ -37,32 +38,36 @@ public class OpenShiftAutoConfiguration {
 	private MavenProperties mavenProperties;
 
 	@Bean
+	@ConditionalOnMissingBean(AppDeployer.class)
 	public AppDeployer appDeployer(OpenShiftDeployerProperties properties,
-			KubernetesClient kubernetesClient, ContainerFactory containerFactory,
+			OpenShiftClient openShiftClient, ContainerFactory containerFactory,
 			MavenResourceJarExtractor mavenResourceJarExtractor,
 			ResourceHash resourceHash) {
 
 		return new ResourceAwareOpenShiftAppDeployer(
-				new OpenShiftAppDeployer(properties, kubernetesClient, containerFactory),
-				new MavenOpenShiftAppDeployer(properties, kubernetesClient,
+				new OpenShiftAppDeployer(properties, openShiftClient, containerFactory),
+				new MavenOpenShiftAppDeployer(properties, openShiftClient,
 						containerFactory, mavenResourceJarExtractor, mavenProperties,
 						resourceHash));
 	}
 
 	@Bean
+	@ConditionalOnMissingBean(TaskLauncher.class)
 	public TaskLauncher taskDeployer(OpenShiftDeployerProperties properties,
-			KubernetesClient kubernetesClient, ContainerFactory containerFactory,
+			OpenShiftClient openShiftClient, ContainerFactory containerFactory,
 			MavenResourceJarExtractor mavenResourceJarExtractor,
 			ResourceHash resourceHash) {
 		return new ResourceAwareOpenShiftTaskLauncher(
-				new OpenShiftTaskLauncher(properties, kubernetesClient, containerFactory),
+				new OpenShiftTaskLauncher(properties, openShiftClient, containerFactory),
 				new MavenOpenShiftTaskLauncher(properties, properties, mavenProperties,
-						kubernetesClient, mavenResourceJarExtractor, resourceHash,
+						openShiftClient, mavenResourceJarExtractor, resourceHash,
 						containerFactory));
 	}
 
-	@Bean
-	public KubernetesClient kubernetesClient(OpenShiftDeployerProperties properties) {
+	@Bean(name = "kubernetesClient")
+	@Primary
+	@ConditionalOnMissingBean(OpenShiftClient.class)
+	public OpenShiftClient openShiftClient(OpenShiftDeployerProperties properties) {
 		return new DefaultOpenShiftClient().inNamespace(properties.getNamespace());
 	}
 

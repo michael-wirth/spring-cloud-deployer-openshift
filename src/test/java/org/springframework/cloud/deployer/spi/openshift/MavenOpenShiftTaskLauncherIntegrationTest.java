@@ -1,16 +1,19 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
 import io.fabric8.openshift.client.OpenShiftClient;
+import org.hamcrest.Matchers;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
+import org.springframework.cloud.deployer.spi.core.AppDefinition;
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.task.LaunchState;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
-import org.springframework.cloud.deployer.spi.test.AbstractTaskLauncherIntegrationTests;
+import org.springframework.cloud.deployer.spi.task.TaskStatus;
 import org.springframework.cloud.deployer.spi.test.Timeout;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -19,8 +22,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+
+import static org.junit.Assert.assertThat;
+import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.eventually;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -29,36 +37,14 @@ import java.util.UUID;
 @TestPropertySource(properties = {
 		"maven.remote-repositories.spring.url=http://repo.spring.io/libs-snapshot" })
 public class MavenOpenShiftTaskLauncherIntegrationTest
-		extends AbstractTaskLauncherIntegrationTests {
-
-	@ClassRule
-	public static OpenShiftTestSupport openShiftTestSupport = new OpenShiftTestSupport();
-
-	@Autowired
-	private OpenShiftClient openShiftClient;
+		extends AbstractOpenShiftTaskLauncherIntegrationTest {
 
 	@Autowired
 	private ResourceAwareOpenShiftTaskLauncher taskLauncher;
 
-	@Autowired
-	private MavenProperties mavenProperties;
-
 	@Override
 	protected TaskLauncher provideTaskLauncher() {
 		return taskLauncher;
-	}
-
-	@Test
-	@Override
-	@Ignore("Currently reported as completed instead of cancelled")
-	public void testSimpleCancel() throws InterruptedException {
-		super.testSimpleCancel();
-	}
-
-	@Override
-	protected String randomName() {
-		// Kubernetes app names must start with a letter and can only be 24 characters
-		return "task-" + UUID.randomUUID().toString().substring(0, 18);
 	}
 
 	@Override

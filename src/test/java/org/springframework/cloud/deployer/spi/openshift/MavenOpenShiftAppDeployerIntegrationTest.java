@@ -104,20 +104,6 @@ public class MavenOpenShiftAppDeployerIntegrationTest
 		openShiftClient.builds().withLabel("spring-app-id").delete();
 	}
 
-	@Test
-	@Override
-	@Ignore("See https://github.com/donovanmuller/spring-cloud-deployer-openshift/issues/56")
-	public void testApplicationPropertiesPassing() {
-		super.testApplicationPropertiesPassing();
-	}
-
-	@Test
-	@Override
-	@Ignore("See https://github.com/donovanmuller/spring-cloud-deployer-openshift/issues/56")
-	public void testCommandLineArgumentsPassing() {
-		super.testCommandLineArgumentsPassing();
-	}
-
 	/**
 	 * The test below are copied as is from KubernetesAppDeployerIntegrationTests. See
 	 * spring-cloud-deployer-kubernetes project.

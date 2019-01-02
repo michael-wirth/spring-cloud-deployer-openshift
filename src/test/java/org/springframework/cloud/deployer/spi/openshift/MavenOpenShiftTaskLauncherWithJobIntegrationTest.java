@@ -14,6 +14,7 @@ import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.openshift.resources.pod.OpenShiftContainerFactory;
 import org.springframework.cloud.deployer.spi.task.LaunchState;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
+import org.springframework.cloud.deployer.spi.task.TaskStatus;
 import org.springframework.cloud.deployer.spi.test.AbstractTaskLauncherIntegrationTests;
 import org.springframework.cloud.deployer.spi.test.Timeout;
 import org.springframework.core.io.ClassPathResource;
@@ -37,10 +38,7 @@ import static org.springframework.cloud.deployer.spi.test.EventuallyMatcher.even
 @TestPropertySource(properties = { "spring.cloud.deployer.openshift.create-job=true",
 		"maven.remote-repositories.spring.url=http://repo.spring.io/libs-snapshot" })
 public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
-		extends AbstractTaskLauncherIntegrationTests {
-
-	@ClassRule
-	public static OpenShiftTestSupport openShiftTestSupport = new OpenShiftTestSupport();
+		extends AbstractOpenShiftTaskLauncherIntegrationTest {
 
 	@Autowired
 	private ResourceAwareOpenShiftTaskLauncher taskLauncher;
@@ -55,12 +53,6 @@ public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
 
 	@Autowired
 	private OpenShiftContainerFactory containerFactory;
-
-	@Override
-	protected String randomName() {
-		// Kubernetes app names must start with a letter and can only be 24 characters
-		return "task-" + UUID.randomUUID().toString().substring(0, 18);
-	}
 
 	@Override
 	protected Timeout deploymentTimeout() {
@@ -83,13 +75,6 @@ public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
 				.groupId("org.springframework.cloud")
 				.artifactId("spring-cloud-deployer-spi-test-app").classifier("exec")
 				.version(properties.getProperty("version")).extension("jar").build();
-	}
-
-	@Test
-	@Override
-	// @Ignore("Currently reported as completed instead of cancelled")
-	public void testSimpleCancel() throws InterruptedException {
-		super.testSimpleCancel();
 	}
 
 	@Test
@@ -150,22 +135,5 @@ public class MavenOpenShiftTaskLauncherWithJobIntegrationTest
 						Matchers.hasProperty("state", Matchers.is(LaunchState.unknown))),
 				timeout.maxAttempts, timeout.pause));
 	}
-
-	// @Configuration
-	// public static class Config {
-	//
-	// @Bean
-	// @Primary
-	// @ConfigurationProperties("maven")
-	// public MavenProperties mavenProperties() {
-	// MavenProperties mavenProperties = new MavenProperties();
-	// mavenProperties.setRemoteRepositories(
-	// ImmutableMap.of("maven.remote-repositories.spring.url",
-	// new MavenProperties.RemoteRepository(
-	// "http://repo.spring.io/libs-snapshot")));
-	// return mavenProperties;
-	// }
-	//
-	// }
 
 }
