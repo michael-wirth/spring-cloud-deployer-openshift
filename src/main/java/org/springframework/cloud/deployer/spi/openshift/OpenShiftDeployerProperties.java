@@ -1,13 +1,9 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
-
-import java.util.List;
-import java.util.Objects;
 
 @ConfigurationProperties(prefix = "spring.cloud.deployer.openshift")
 public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
@@ -66,7 +62,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	 */
 	private String defaultS2iImage = "tagedieb/s2i-java-centos:3.0.1";
 
-	private String defaultS2iImageCmd = "/usr/local/s2i/run";
+	private String containerCommand = "/usr/local/s2i/run";
 
 	public boolean isForceBuild() {
 		return forceBuild;
@@ -136,12 +132,12 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 		this.defaultS2iImage = defaultS2iImage;
 	}
 
-	public String getDefaultS2iImageCmd() {
-		return defaultS2iImageCmd;
+	public String getContainerCommand() {
+		return containerCommand;
 	}
 
-	public void setDefaultS2iImageCmd(String defaultS2iImageCmd) {
-		this.defaultS2iImageCmd = defaultS2iImageCmd;
+	public void setContainerCommand(String containerCommand) {
+		this.containerCommand = containerCommand;
 	}
 
 }

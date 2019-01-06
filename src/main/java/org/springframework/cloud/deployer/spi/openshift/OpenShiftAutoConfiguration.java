@@ -59,7 +59,7 @@ public class OpenShiftAutoConfiguration {
 			ResourceHash resourceHash) {
 		return new ResourceAwareOpenShiftTaskLauncher(
 				new OpenShiftTaskLauncher(properties, openShiftClient, containerFactory),
-				new MavenOpenShiftTaskLauncher(properties, properties, mavenProperties,
+				new MavenOpenShiftTaskLauncher(properties, mavenProperties,
 						openShiftClient, mavenResourceJarExtractor, resourceHash,
 						containerFactory));
 	}

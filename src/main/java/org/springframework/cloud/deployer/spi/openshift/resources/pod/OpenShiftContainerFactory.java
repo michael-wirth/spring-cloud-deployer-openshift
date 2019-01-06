@@ -1,7 +1,5 @@
 package org.springframework.cloud.deployer.spi.openshift.resources.pod;
 
-import com.google.common.escape.Escaper;
-import com.google.common.escape.Escapers;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -21,9 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 public class OpenShiftContainerFactory extends DefaultContainerFactory
 		implements OpenShiftSupport {
@@ -83,9 +78,8 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 			logger.info(
 					"S2I build detected, setting the default cmd, required to pass command line args");
 
-			List<String> args = createCommandArgs(request);
-			args.add(0, properties.getDefaultS2iImageCmd());
-			container = new ContainerBuilder(container).withArgs(args).build();
+			container = new ContainerBuilder(container)
+					.withCommand(properties.getContainerCommand()).build();
 		}
 
 		// use the VolumeMountFactory to resolve VolumeMounts because it has richer
@@ -96,37 +90,6 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 
 		return container;
 	}
-
-	/**
-	 * Create command arguments
-	 * @param request the {@link AppDeploymentRequest}
-	 * @return the command line arguments to use
-	 */
-	// protected List<String> createCommandArgs(AppDeploymentRequest request) {
-	// List<String> cmdArgs = new LinkedList<>();
-	// // add properties from deployment request
-	// Map<String, String> args = request.getDefinition().getProperties();
-	// for (Map.Entry<String, String> entry : args.entrySet()) {
-	// cmdArgs.add(String.format("--%s=%s", entry.getKey(), encode(entry.getValue())));
-	// }
-	// // add provided command line args
-	// cmdArgs.addAll(request.getCommandlineArguments());
-	// logger.debug("Using command args: " + cmdArgs);
-	// return cmdArgs;
-	// }
-	//
-	// String encode(String value) {
-	// if (StringUtils.containsWhitespace(value) || StringUtils.containsAny(value, "'\""))
-	// {
-	// char quote = '"';
-	// Escaper escaper = Escapers.builder().addEscape(quote, "\\\"").build();
-	// String escapedValue = escaper.escape(StringUtils.unwrap(StringUtils.unwrap(value,
-	// quote), "'"));
-	// return StringUtils.wrapIfMissing(escapedValue, quote);
-	// }
-	//
-	// return value;
-	// }
 
 	/**
 	 * This allows the Kubernetes {@link DefaultContainerFactory} to be reused but still

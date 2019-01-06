@@ -1,6 +1,6 @@
 package org.springframework.cloud.deployer.spi.openshift;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
+import com.google.common.collect.Maps;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
@@ -12,38 +12,47 @@ import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.deployer.spi.task.TaskStatus;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 		implements TaskLauncher {
 
-	private KubernetesDeployerProperties properties;
+	private OpenShiftDeployerProperties openShiftDeployerProperties;
 
 	private OpenShiftClient client;
 
-	private ContainerFactory containerFactory;
-
-	public OpenShiftTaskLauncher(KubernetesDeployerProperties properties,
-			KubernetesClient client, ContainerFactory containerFactory) {
-		super(properties,
-				new DefaultOpenShiftClient().inNamespace(client.getNamespace()));
-
-		this.properties = properties;
-		this.client = (OpenShiftClient) client;
-		this.containerFactory = containerFactory;
+	public OpenShiftTaskLauncher(OpenShiftDeployerProperties properties,
+			OpenShiftClient client, ContainerFactory containerFactory) {
+		super(properties, client, containerFactory);
+		this.openShiftDeployerProperties = properties;
+		this.client = client;
 	}
 
 	@Override
 	public String launch(AppDeploymentRequest request) {
 		logger.info(String.format("Launching task: '%s'", request.getDefinition()));
 
-		String taskId = createDeploymentId(request);
+		String appId = createDeploymentId(request);
 
-		List<ObjectFactory> factories = populateOpenShiftObjects(request, taskId);
-		factories.forEach(factory -> factory.addObject(request, taskId));
-		factories.forEach(factory -> factory.applyObject(request, taskId));
+		Map<String, String> deploymentProperties = new HashMap();
+		deploymentProperties.putAll(request.getDeploymentProperties());
+		deploymentProperties.put(SPRING_APP_KEY, appId);
+		AppDeploymentRequest taskDeploymentRequest = new AppDeploymentRequest(
+				request.getDefinition(), request.getResource(), deploymentProperties,
+				request.getCommandlineArguments());
 
-		return taskId;
+		List<ObjectFactory> factories = populateOpenShiftObjects(taskDeploymentRequest,
+				appId);
+		factories.forEach(factory -> factory.addObject(taskDeploymentRequest, appId));
+		factories.forEach(factory -> factory.applyObject(taskDeploymentRequest, appId));
+
+		return appId;
+	}
+
+	protected String launchDockerResource(AppDeploymentRequest request) {
+		return super.launch(request);
 	}
 
 	@Override
@@ -57,6 +66,15 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 				.forEach(build -> client.builds().withName(id).cascading(true).delete());
 
 		super.cleanup(id);
+	}
+
+	@Override
+	protected String createDeploymentId(AppDeploymentRequest request) {
+		String appId = request.getDeploymentProperties().get(SPRING_APP_KEY);
+		if (appId == null) {
+			appId = super.createDeploymentId(request);
+		}
+		return appId;
 	}
 
 	/**
@@ -84,19 +102,7 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 						request.getDeploymentProperties(),
 						request.getCommandlineArguments());
 
-				new KubernetesTaskLauncher(properties, getClient(), containerFactory) {
-
-					/**
-					 * Reuse the taskId created in the {@link OpenShiftTaskLauncher},
-					 * otherwise the {@link KubernetesTaskLauncher} will generate a new
-					 * taskId for the actual task Pod which does not match the one
-					 * returned from launch.
-					 */
-					@Override
-					protected String createDeploymentId(AppDeploymentRequest request) {
-						return taskId;
-					}
-				}.launch(taskDeploymentRequest);
+				launchDockerResource(taskDeploymentRequest);
 			}
 		});
 
@@ -107,8 +113,8 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 		return client;
 	}
 
-	protected KubernetesDeployerProperties getProperties() {
-		return properties;
+	protected OpenShiftDeployerProperties getProperties() {
+		return openShiftDeployerProperties;
 	}
 
 }

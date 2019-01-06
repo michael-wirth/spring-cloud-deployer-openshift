@@ -59,21 +59,19 @@ abstract public class AbstractOpenShiftTaskLauncherIntegrationTest
 		String launchId = taskLauncher().launch(request);
 
 		Timeout timeout = deploymentTimeout();
-		assertThat(launchId,
-				eventually(
-						hasStatusThat(Matchers.hasProperty("state",
-								Matchers.is(LaunchState.running))),
-						timeout.maxAttempts, timeout.pause));
+		assertThat(launchId, eventually(
+				hasStatusThat(
+						Matchers.hasProperty("state", Matchers.is(LaunchState.running))),
+				timeout.maxAttempts, timeout.pause));
 
 		log.info("Cancelling {}...", request.getDefinition().getName());
 		taskLauncher().cancel(launchId);
 
 		timeout = undeploymentTimeout();
-		assertThat(launchId,
-				eventually(
-						hasStatusThat(Matchers.hasProperty("state",
-								Matchers.is(LaunchState.unknown))),
-						timeout.maxAttempts, timeout.pause));
+		assertThat(launchId, eventually(
+				hasStatusThat(
+						Matchers.hasProperty("state", Matchers.is(LaunchState.unknown))),
+				timeout.maxAttempts, timeout.pause));
 
 		taskLauncher().destroy(definition.getName());
 	}

@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.deployer.resource.docker.DockerResource;
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
@@ -40,12 +41,12 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 
 	private final ContainerFactory containerFactory;
 
-	public MavenOpenShiftTaskLauncher(KubernetesDeployerProperties properties,
+	public MavenOpenShiftTaskLauncher(
 			OpenShiftDeployerProperties openShiftDeployerProperties,
-			MavenProperties mavenProperties, KubernetesClient client,
+			MavenProperties mavenProperties, OpenShiftClient client,
 			MavenResourceJarExtractor mavenResourceJarExtractor,
 			ResourceHash resourceHash, ContainerFactory containerFactory) {
-		super(properties, client, containerFactory);
+		super(openShiftDeployerProperties, client, containerFactory);
 		this.openShiftDeployerProperties = openShiftDeployerProperties;
 		this.mavenResourceJarExtractor = mavenResourceJarExtractor;
 		this.mavenProperties = mavenProperties;
@@ -76,7 +77,7 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 					buildStrategy, getClient(), createIdMap(taskId, request),
 					(build, watch) -> {
 						if (buildStrategy instanceof S2iBinaryInputBuildConfigStrategy) {
-							launchTask(build, watch, taskId, new AppDeploymentRequest(
+							launchTask(build, watch, new AppDeploymentRequest(
 									request.getDefinition(), request.getResource(),
 									ImmutableMap.<String, String>builder()
 											.putAll(request.getDeploymentProperties())
@@ -84,7 +85,7 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 									request.getCommandlineArguments()));
 						}
 						else {
-							launchTask(build, watch, taskId, request);
+							launchTask(build, watch, request);
 						}
 					});
 			factories.add(watchingBuildConfigStrategy);
@@ -121,8 +122,7 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 		return buildExists;
 	}
 
-	protected void launchTask(Build build, Watch watch, String taskId,
-			AppDeploymentRequest request) {
+	protected void launchTask(Build build, Watch watch, AppDeploymentRequest request) {
 		if (build.getStatus().getPhase().equals("Complete")) {
 			logger.info(
 					String.format("Build complete: '%s'", build.getMetadata().getName()));
@@ -133,21 +133,7 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 					request.getDefinition(), dockerResource,
 					request.getDeploymentProperties(), request.getCommandlineArguments());
 
-			new KubernetesTaskLauncher(getProperties(),
-					new DefaultOpenShiftClient().inNamespace(getClient().getNamespace()),
-					containerFactory) {
-
-				/**
-				 * Reuse the taskId created in the {@link OpenShiftTaskLauncher},
-				 * otherwise the {@link KubernetesTaskLauncher} will generate a new taskId
-				 * for the actual task Pod which does not match the one returned from
-				 * launch.
-				 */
-				@Override
-				protected String createDeploymentId(AppDeploymentRequest request) {
-					return taskId;
-				}
-			}.launch(taskDeploymentRequest);
+			launchDockerResource(taskDeploymentRequest);
 
 			watch.close();
 		}
