@@ -1,19 +1,35 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift.maven;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.common.collect.ImmutableMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
+
 import org.springframework.cloud.deployer.resource.docker.DockerResource;
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.kubernetes.ContainerFactory;
-import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
-import org.springframework.cloud.deployer.spi.kubernetes.KubernetesTaskLauncher;
 import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
 import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
 import org.springframework.cloud.deployer.spi.openshift.OpenShiftTaskLauncher;
@@ -25,9 +41,6 @@ import org.springframework.cloud.deployer.spi.openshift.resources.buildConfig.Ma
 import org.springframework.cloud.deployer.spi.openshift.resources.buildConfig.S2iBinaryInputBuildConfigStrategy;
 import org.springframework.cloud.deployer.spi.openshift.resources.buildConfig.WatchingBuildConfigStrategy;
 import org.springframework.cloud.deployer.spi.openshift.resources.imageStream.ImageStreamFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 
@@ -68,8 +81,8 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 
 			factories.add(new ImageStreamFactory(getClient()));
 
-			BuildStrategies buildStrategies = new BuildStrategies(mavenProperties,
-					openShiftDeployerProperties, mavenResourceJarExtractor, resourceHash,
+			BuildStrategies buildStrategies = new BuildStrategies(this.mavenProperties,
+					this.openShiftDeployerProperties, this.mavenResourceJarExtractor, this.resourceHash,
 					getClient());
 			BuildConfigStrategy buildStrategy = buildStrategies.chooseBuildStrategy(
 					request, createIdMap(taskId, request), mavenResource);
@@ -104,18 +117,18 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 				.get(OpenShiftDeploymentPropertyKeys.OPENSHIFT_BUILD_FORCE);
 		if (StringUtils.isAlpha(forceBuild)) {
 			buildExists = !Boolean.parseBoolean(forceBuild.toLowerCase())
-					|| !openShiftDeployerProperties.isForceBuild();
+					|| !this.openShiftDeployerProperties.isForceBuild();
 		}
 		else {
 			buildExists = getClient().builds().withLabelIn(SPRING_APP_KEY, appId).list()
 					.getItems().stream()
-					.filter(build -> !build.getStatus().getPhase().equals("Failed"))
-					.flatMap(build -> build.getSpec().getStrategy().getDockerStrategy()
+					.filter((build) -> !build.getStatus().getPhase().equals("Failed"))
+					.flatMap((build) -> build.getSpec().getStrategy().getDockerStrategy()
 							.getEnv().stream()
-							.filter(envVar -> envVar.getName().equals(
+							.filter((envVar) -> envVar.getName().equals(
 									MavenBuildConfigFactory.SPRING_BUILD_ID_ENV_VAR)
 									&& envVar.getValue().equals(
-											resourceHash.hashResource(mavenResource))))
+											this.resourceHash.hashResource(mavenResource))))
 					.count() > 0;
 		}
 
@@ -124,7 +137,7 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 
 	protected void launchTask(Build build, Watch watch, AppDeploymentRequest request) {
 		if (build.getStatus().getPhase().equals("Complete")) {
-			logger.info(
+			this.logger.info(
 					String.format("Build complete: '%s'", build.getMetadata().getName()));
 
 			DockerResource dockerResource = new DockerResource(

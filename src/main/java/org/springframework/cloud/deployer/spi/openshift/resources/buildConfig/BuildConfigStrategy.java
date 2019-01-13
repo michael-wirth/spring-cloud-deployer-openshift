@@ -1,14 +1,36 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package org.springframework.cloud.deployer.spi.openshift.resources.buildConfig;
 
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
-
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
+
+/**
+ * Abstract BuildConfig strategy.
+ *
+ * @author Donovan Muller
+ */
 public abstract class BuildConfigStrategy implements ObjectFactory<BuildConfig> {
 
 	private OpenShiftClient client;
@@ -26,7 +48,7 @@ public abstract class BuildConfigStrategy implements ObjectFactory<BuildConfig> 
 
 	@Override
 	public BuildConfig addObject(AppDeploymentRequest request, String appId) {
-		BuildConfig buildConfig = buildBuildConfig(request, appId, labels);
+		BuildConfig buildConfig = buildBuildConfig(request, appId, this.labels);
 
 		// TODO test this!
 		// if (getExisting(appId).isPresent()) {
@@ -35,7 +57,7 @@ public abstract class BuildConfigStrategy implements ObjectFactory<BuildConfig> 
 		 * issues. Need to investigate if there is a clean way around it. For now, delete
 		 * and recreate...
 		 */
-		buildConfig = client.buildConfigs().createOrReplace(buildConfig);
+		buildConfig = this.client.buildConfigs().createOrReplace(buildConfig);
 		// client.buildConfigs().withName(appId).delete();
 		// client.builds().withLabelIn("spring-app-id", appId).delete();
 		// buildConfig = client.buildConfigs().create(buildConfig);
@@ -49,8 +71,8 @@ public abstract class BuildConfigStrategy implements ObjectFactory<BuildConfig> 
 
 	@Override
 	public void applyObject(AppDeploymentRequest request, String appId) {
-		client.buildConfigs().withName(appId)
-				.instantiate(buildConfigFactory.buildBuildRequest(request, appId));
+		this.client.buildConfigs().withName(appId)
+				.instantiate(this.buildConfigFactory.buildBuildRequest(request, appId));
 	}
 
 	protected abstract BuildConfig buildBuildConfig(AppDeploymentRequest request,
@@ -58,10 +80,10 @@ public abstract class BuildConfigStrategy implements ObjectFactory<BuildConfig> 
 
 	protected Optional<BuildConfig> getExisting(String name) {
 		//@formatter:off
-		BuildConfig value = client.buildConfigs()
-                .withName(name)
-                .fromServer()
-                .get();
+		BuildConfig value = this.client.buildConfigs()
+				.withName(name)
+				.fromServer()
+				.get();
 
 		return Optional.ofNullable(value);
 		//@formatter:on

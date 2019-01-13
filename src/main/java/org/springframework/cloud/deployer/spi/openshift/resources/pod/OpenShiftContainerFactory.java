@@ -1,4 +1,25 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift.resources.pod;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -6,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.deployer.resource.docker.DockerResource;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.kubernetes.ContainerConfiguration;
@@ -15,11 +37,11 @@ import org.springframework.cloud.deployer.spi.openshift.OpenShiftSupport;
 import org.springframework.cloud.deployer.spi.openshift.resources.volumes.VolumeMountFactory;
 import org.springframework.core.io.AbstractResource;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-
+/**
+ * Container factory.
+ *
+ * @author Donovan Muller
+ */
 public class OpenShiftContainerFactory extends DefaultContainerFactory
 		implements OpenShiftSupport {
 
@@ -48,8 +70,8 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 								new AppDeploymentRequest(request.getDefinition(),
 										new OverridableDockerResource(
 												request.getResource().getURI(),
-												properties.getDockerRegistryOverride(),
-												properties.getImageProjectName()),
+												this.properties.getDockerRegistryOverride(),
+												this.properties.getImageProjectName()),
 										request.getDeploymentProperties(),
 										request.getCommandlineArguments()))
 												.withHostNetwork(containerConfiguration
@@ -57,9 +79,9 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 												.withExternalPort(containerConfiguration
 														.getExternalPort()));
 			}
-			catch (IOException e) {
+			catch (IOException ex) {
 				throw new IllegalArgumentException(
-						"Unable to get URI for " + request.getResource(), e);
+						"Unable to get URI for " + request.getResource(), ex);
 			}
 		}
 		else {
@@ -79,14 +101,14 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 					"S2I build detected, setting the default cmd, required to pass command line args");
 
 			container = new ContainerBuilder(container)
-					.withCommand(properties.getContainerCommand()).build();
+					.withCommand(this.properties.getContainerCommand()).build();
 		}
 
 		// use the VolumeMountFactory to resolve VolumeMounts because it has richer
 		// support for things like using a Spring Cloud config server to resolve
 		// VolumeMounts
 		container.setVolumeMounts(
-				volumeMountFactory.addObject(request, containerConfiguration.getAppId()));
+				this.volumeMountFactory.addObject(request, containerConfiguration.getAppId()));
 
 		return container;
 	}
@@ -120,14 +142,13 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 		@Override
 		public URI getURI() {
 			try {
-				return new URIBuilder("docker:" + appId).build();
+				return new URIBuilder("docker:" + this.appId).build();
 			}
-			catch (URISyntaxException e) {
+			catch (URISyntaxException ex) {
 				throw new IllegalStateException(
-						"Could not create masked URI for Maven build", e);
+						"Could not create masked URI for Maven build", ex);
 			}
 		}
-
 	}
 
 	private class OverridableDockerResource extends DockerResource {
@@ -139,7 +160,7 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 
 		private final String imageProjectName;
 
-		public OverridableDockerResource(URI uri, String dockerRegistry,
+		OverridableDockerResource(URI uri, String dockerRegistry,
 				String imageProjectName) {
 			super(uri);
 			this.dockerRegistry = dockerRegistry;
@@ -159,25 +180,23 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 		@Override
 		public URI getURI() throws IOException {
 			try {
-				if (StringUtils.isNotBlank(dockerRegistry)) {
-					log.debug("Overriding docker registry with '{}' and project '{}'",
-							dockerRegistry, imageProjectName);
+				if (StringUtils.isNotBlank(this.dockerRegistry)) {
+					this.log.debug("Overriding docker registry with '{}' and project '{}'",
+							this.dockerRegistry, this.imageProjectName);
 					return new URIBuilder(super.getURI().toString()
 							.replaceFirst("docker:(.*?)/",
-									String.format("docker:%s/", dockerRegistry))
+									String.format("docker:%s/", this.dockerRegistry))
 							.replaceFirst("/(.*?)/",
-									String.format("/%s/", imageProjectName))).build();
+									String.format("/%s/", this.imageProjectName))).build();
 				}
 				else {
 					return super.getURI();
 				}
 			}
-			catch (URISyntaxException e) {
+			catch (URISyntaxException ex) {
 				throw new IllegalStateException(
-						"Could not create masked URI for Maven build", e);
+						"Could not create masked URI for Maven build", ex);
 			}
 		}
-
 	}
-
 }

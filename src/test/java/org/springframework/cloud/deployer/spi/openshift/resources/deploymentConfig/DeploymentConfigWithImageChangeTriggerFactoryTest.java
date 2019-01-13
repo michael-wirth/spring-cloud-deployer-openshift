@@ -32,7 +32,7 @@ public class DeploymentConfigWithImageChangeTriggerFactoryTest {
 
 	@Test
 	public void buildDeploymentConfig() {
-		deploymentConfigFactory = new DeploymentConfigWithImageChangeTriggerWithIndexSuppportFactory(
+		deploymentConfigFactory = new DeploymentConfigWithImageChangeTriggerWithIndexSupportFactory(
 				server.getOpenshiftClient(), new OpenShiftDeployerProperties(), null,
 				null, null, ImagePullPolicy.Always);
 
@@ -61,7 +61,7 @@ public class DeploymentConfigWithImageChangeTriggerFactoryTest {
 
 	@Test
 	public void buildDeploymentConfigWithImageTag() {
-		deploymentConfigFactory = new DeploymentConfigWithImageChangeTriggerWithIndexSuppportFactory(
+		deploymentConfigFactory = new DeploymentConfigWithImageChangeTriggerWithIndexSupportFactory(
 				server.getOpenshiftClient(), new OpenShiftDeployerProperties(), null,
 				null, null, ImagePullPolicy.Always);
 

@@ -1,19 +1,34 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift.resources.buildConfig;
 
 import java.util.Map;
-
-import io.fabric8.openshift.api.model.BuildStrategy;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 
 /**
  * Provides the ability to watch an object. Whilst watching this object, the events for
@@ -57,22 +72,23 @@ public class WatchingBuildConfigStrategy extends BuildConfigStrategy {
 	@Override
 	protected BuildConfig buildBuildConfig(AppDeploymentRequest request, String appId,
 			Map<String, String> labels) {
-		return buildConfigStrategy.buildBuildConfig(request, appId, labels);
+		return this.buildConfigStrategy.buildBuildConfig(request, appId, labels);
 	}
 
 	@Override
 	public void applyObject(AppDeploymentRequest request, String appId) {
-		buildConfigStrategy.applyObject(request, appId);
+		this.buildConfigStrategy.applyObject(request, appId);
 
-		watch = client.builds().withLabelIn(SPRING_APP_KEY, appId)
+		this.watch = this.client.builds().withLabelIn(SPRING_APP_KEY, appId)
 				.watch(new Watcher<Build>() {
 
 					@Override
 					public void eventReceived(Action action, Build resource) {
-						logger.trace("Received event '{}' for build: '{}'", action,
-								resource);
+						logger.trace(
+								"Received event '{}' for build: '{}'", action, resource);
 
-						callback.callback(resource, watch);
+						WatchingBuildConfigStrategy.this.callback.callback(resource,
+								WatchingBuildConfigStrategy.this.watch);
 					}
 
 					@Override
@@ -89,5 +105,4 @@ public class WatchingBuildConfigStrategy extends BuildConfigStrategy {
 		void callback(R r, Watch watch);
 
 	}
-
 }

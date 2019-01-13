@@ -1,7 +1,24 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.core.RuntimeEnvironmentInfo;
@@ -9,6 +26,11 @@ import org.springframework.cloud.deployer.spi.openshift.maven.MavenOpenShiftTask
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.deployer.spi.task.TaskStatus;
 
+/**
+ * This TaskLauncher handles handles Maven-, Project- and Dockerresources.
+ *
+ * @author Donovan Muller
+ */
 public class ResourceAwareOpenShiftTaskLauncher implements TaskLauncher {
 
 	private static final Logger logger = LoggerFactory
@@ -30,16 +52,16 @@ public class ResourceAwareOpenShiftTaskLauncher implements TaskLauncher {
 
 		try {
 			if (request.getResource() instanceof MavenResource) {
-				taskId = mavenOpenShiftTaskLauncher.launch(request);
+				taskId = this.mavenOpenShiftTaskLauncher.launch(request);
 			}
 			else {
-				taskId = openShiftTaskLauncher.launch(request);
+				taskId = this.openShiftTaskLauncher.launch(request);
 			}
 		}
-		catch (Exception e) {
+		catch (Exception ex) {
 			logger.error(String.format(
-					"Error deploying application deployment request: %s", request), e);
-			throw e;
+					"Error deploying application deployment request: %s", request), ex);
+			throw ex;
 		}
 
 		return taskId;
@@ -47,27 +69,27 @@ public class ResourceAwareOpenShiftTaskLauncher implements TaskLauncher {
 
 	@Override
 	public void cancel(String taskId) {
-		openShiftTaskLauncher.cancel(taskId);
+		this.openShiftTaskLauncher.cancel(taskId);
 	}
 
 	@Override
 	public TaskStatus status(String taskId) {
-		return openShiftTaskLauncher.status(taskId);
+		return this.openShiftTaskLauncher.status(taskId);
 	}
 
 	@Override
 	public void cleanup(final String taskId) {
-		openShiftTaskLauncher.cancel(taskId);
+		this.openShiftTaskLauncher.cancel(taskId);
 	}
 
 	@Override
 	public void destroy(final String taskId) {
-		openShiftTaskLauncher.destroy(taskId);
+		this.openShiftTaskLauncher.destroy(taskId);
 	}
 
 	@Override
 	public RuntimeEnvironmentInfo environmentInfo() {
-		return openShiftTaskLauncher.environmentInfo();
+		return this.openShiftTaskLauncher.environmentInfo();
 	}
 
 }

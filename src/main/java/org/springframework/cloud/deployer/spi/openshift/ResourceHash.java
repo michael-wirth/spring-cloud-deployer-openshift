@@ -1,30 +1,43 @@
-package org.springframework.cloud.deployer.spi.openshift;
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import static com.google.common.hash.Hashing.sha1;
+package org.springframework.cloud.deployer.spi.openshift;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.springframework.core.io.Resource;
-
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
+import org.springframework.core.io.Resource;
+
+/**
+ * Generates a SHA-256 hash of the provided {@link Resource}.
+ *
+ * @author Donovan Muller
+ */
 public class ResourceHash {
 
-	/**
-	 * Generates a SHA-1 hash of the provided {@link Resource}
-	 * @param resource
-	 * @return a hash of the {@link Resource}
-	 */
 	public String hashResource(Resource resource) {
 		try {
 			File file = resource.getFile();
-			String hash = Files.hash(file, sha1()).toString();
-
-			return hash;
+			return Files.asByteSource(file).hash(Hashing.sha256()).toString();
 		}
-		catch (IOException e) {
-			throw new RuntimeException("Could not read resource to hash", e);
+		catch (IOException ex) {
+			throw new RuntimeException("Could not read resource to hash", ex);
 		}
 	}
 

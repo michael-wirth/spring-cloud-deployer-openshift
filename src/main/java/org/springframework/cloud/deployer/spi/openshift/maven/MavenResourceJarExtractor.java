@@ -1,13 +1,30 @@
-package org.springframework.cloud.deployer.spi.openshift.maven;
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.zeroturnaround.zip.ZipUtil;
+package org.springframework.cloud.deployer.spi.openshift.maven;
 
 import java.io.IOException;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.zeroturnaround.zip.ZipUtil;
+
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 
 public class MavenResourceJarExtractor {
 
@@ -19,10 +36,10 @@ public class MavenResourceJarExtractor {
 	 * file in the archive must be <b>the absolute path</b> to the file. I.e.
 	 * <code>/the/path/to/the/file.txt</code>, where <code>file.txt</code> is the file to
 	 * extract.
-	 * @param resource
-	 * @param file
+	 * @param resource zip file
+	 * @param file to extract
 	 * @return a {@link Resource} representing the extracted file
-	 * @throws IOException
+	 * @throws IOException if file is not readable
 	 */
 	public Optional<Resource> extractFile(Resource resource, String file)
 			throws IOException {

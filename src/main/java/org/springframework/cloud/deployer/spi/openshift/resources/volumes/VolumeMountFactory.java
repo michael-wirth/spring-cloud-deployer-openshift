@@ -1,19 +1,36 @@
-package org.springframework.cloud.deployer.spi.openshift.resources.volumes;
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
-import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
-import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
-import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
-import org.yaml.snakeyaml.Yaml;
+package org.springframework.cloud.deployer.spi.openshift.resources.volumes;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.Yaml;
+
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
+import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
+import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
+import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
 
 /**
  * Use the Fabric8 {@link VolumeMount} model to allow all volume plugins currently
@@ -62,9 +79,9 @@ public class VolumeMountFactory implements ObjectFactory<List<VolumeMount>> {
 								KubernetesDeployerProperties.class);
 				volumeMounts.addAll(kubernetesDeployerProperties.getVolumeMounts());
 			}
-			catch (Exception e) {
+			catch (Exception ex) {
 				throw new IllegalArgumentException(String.format(
-						"Invalid volume mount '%s'", volumeMountDeploymentProperty), e);
+						"Invalid volume mount '%s'", volumeMountDeploymentProperty), ex);
 			}
 		}
 		// only add volume mounts that have not already been added, based on the volume
@@ -72,9 +89,9 @@ public class VolumeMountFactory implements ObjectFactory<List<VolumeMount>> {
 		// name
 		// i.e. allow provided deployment volume mounts to override deployer defined
 		// volume mounts
-		volumeMounts.addAll(properties.getVolumeMounts().stream()
-				.filter(volumeMount -> volumeMounts.stream()
-						.noneMatch(existingVolumeMount -> existingVolumeMount.getName()
+		volumeMounts.addAll(this.properties.getVolumeMounts().stream()
+				.filter((volumeMount) -> volumeMounts.stream()
+						.noneMatch((existingVolumeMount) -> existingVolumeMount.getName()
 								.equals(volumeMount.getName())))
 				.collect(Collectors.toList()));
 

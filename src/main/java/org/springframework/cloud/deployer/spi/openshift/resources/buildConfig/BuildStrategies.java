@@ -1,8 +1,30 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift.resources.buildConfig;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
@@ -15,11 +37,11 @@ import org.springframework.cloud.deployer.spi.openshift.maven.GitReference;
 import org.springframework.cloud.deployer.spi.openshift.maven.MavenResourceJarExtractor;
 import org.springframework.core.io.Resource;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
-
+/**
+ * Evaluates und provides the best matching build strategy.
+ *
+ * @author Donovan Muller
+ */
 public class BuildStrategies {
 
 	private static final Logger logger = LoggerFactory.getLogger(BuildStrategies.class);
@@ -53,11 +75,11 @@ public class BuildStrategies {
 		return Stream.of(
 				dockerfileFromProvidedGitRepoBuildConfig(applicationProperties, labels),
 				dockerfileFromRemoteGitRepoBuildConfig(
-						new OpenShiftMavenDeploymentRequest(request, mavenProperties),
+						new OpenShiftMavenDeploymentRequest(request, this.mavenProperties),
 						mavenResource, request, labels),
 				dockerfileBuildConfig(request, labels)).filter(Optional::isPresent)
 				.findFirst().orElse(Optional.of(new S2iBinaryInputBuildConfigStrategy(
-						deployerProperties, client, labels, mavenResource)))
+						this.deployerProperties, this.client, labels, mavenResource)))
 				.get();
 	}
 
@@ -74,10 +96,10 @@ public class BuildStrategies {
 					"master");
 			GitReference gitReference = new GitReference(gitUri, gitReferenceProperty);
 			MavenBuildConfigFactory mavenBuildConfigFactory = new MavenBuildConfigFactory(
-					deployerProperties, resourceHash, mavenProperties);
+					this.deployerProperties, this.resourceHash, this.mavenProperties);
 			buildConfigFactory = Optional
 					.of(new GitWithDockerBuildConfigStrategy(mavenBuildConfigFactory,
-							gitReference, deployerProperties, client, labels));
+							gitReference, this.deployerProperties, this.client, labels));
 		}
 
 		return buildConfigFactory;
@@ -96,7 +118,7 @@ public class BuildStrategies {
 
 		GitReference gitReference = openShiftRequest.getGitReference();
 		try {
-			if (openShiftRequest.isMavenProjectExtractable() && mavenResourceJarExtractor
+			if (openShiftRequest.isMavenProjectExtractable() && this.mavenResourceJarExtractor
 					.extractFile(mavenResource, dockerfileLocation(request))
 					.isPresent()) {
 				/**
@@ -106,14 +128,14 @@ public class BuildStrategies {
 				 * https://docs.openshift.org/latest/dev_guide/builds.html#source-code
 				 */
 				MavenBuildConfigFactory mavenBuildConfigFactory = new MavenBuildConfigFactory(
-						deployerProperties, resourceHash, mavenProperties);
+						this.deployerProperties, this.resourceHash, this.mavenProperties);
 				buildConfigFactory = Optional
 						.of(new GitWithDockerBuildConfigStrategy(mavenBuildConfigFactory,
-								gitReference, deployerProperties, client, labels));
+								gitReference, this.deployerProperties, this.client, labels));
 			}
 		}
-		catch (IOException e) {
-			logger.error("Could not extract Git URI from Maven artifact", e);
+		catch (IOException ex) {
+			logger.error("Could not extract Git URI from Maven artifact", ex);
 		}
 
 		return buildConfigFactory;
@@ -126,10 +148,10 @@ public class BuildStrategies {
 		if (request.getDeploymentProperties().containsKey(
 				OpenShiftDeploymentPropertyKeys.OPENSHIFT_DEPLOYMENT_DOCKERFILE)) {
 			MavenBuildConfigFactory mavenBuildConfigFactory = new MavenBuildConfigFactory(
-					deployerProperties, resourceHash, mavenProperties);
+					this.deployerProperties, this.resourceHash, this.mavenProperties);
 			buildConfigFactory = Optional
 					.of(new MavenDockerfileWithDockerBuildConfigStrategy(
-							mavenBuildConfigFactory, deployerProperties, client, labels));
+							mavenBuildConfigFactory, this.deployerProperties, this.client, labels));
 		}
 
 		return buildConfigFactory;
@@ -138,7 +160,7 @@ public class BuildStrategies {
 	/**
 	 * Get the source context directory, the path where the Dockerfile is expected.
 	 * Defaults to the root directory.
-	 * @param request
+	 * @param request application deployment spec
 	 * @return the context directory/path where the Dockerfile is expected
 	 */
 	private String dockerfileLocation(AppDeploymentRequest request) {

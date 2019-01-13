@@ -1,8 +1,26 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift.resources.buildConfig;
 
-import static java.lang.String.format;
-
 import java.util.Map;
+
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
@@ -11,10 +29,11 @@ import org.springframework.cloud.deployer.spi.openshift.OpenShiftSupport;
 import org.springframework.cloud.deployer.spi.openshift.maven.GitReference;
 import org.springframework.util.StringUtils;
 
-import io.fabric8.openshift.api.model.BuildConfig;
-import io.fabric8.openshift.api.model.BuildConfigBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
-
+/**
+ * Git repository with docker BuildConfig strategy.
+ *
+ * @author Donovan Muller
+ */
 public class GitWithDockerBuildConfigStrategy extends BuildConfigStrategy
 		implements OpenShiftSupport {
 
@@ -37,13 +56,13 @@ public class GitWithDockerBuildConfigStrategy extends BuildConfigStrategy
 	protected BuildConfig buildBuildConfig(final AppDeploymentRequest request,
 			final String appId, final Map<String, String> labels) {
 		//@formatter:off
-		BuildConfig buildConfig = new BuildConfigBuilder(buildConfigFactory.buildBuildConfig(request, appId, labels))
+		BuildConfig buildConfig = new BuildConfigBuilder(this.buildConfigFactory.buildBuildConfig(request, appId, labels))
 			.editSpec()
 				.withNewSource()
 					.withType("Git")
 					.withNewGit()
-						.withUri(gitReference.getParsedUri())
-						.withRef(gitReference.getBranch())
+						.withUri(this.gitReference.getParsedUri())
+						.withRef(this.gitReference.getBranch())
 					.endGit()
 					.withContextDir(getContextDirectory(request))
 				.endSource()
@@ -65,28 +84,28 @@ public class GitWithDockerBuildConfigStrategy extends BuildConfigStrategy
 		}
 
 		//@formatter:off
-        return new BuildConfigBuilder(buildConfig)
-            .editSpec()
-                .withNewStrategy()
-                    .withType("Docker")
-                    .withNewDockerStrategy()
+		return new BuildConfigBuilder(buildConfig)
+			.editSpec()
+				.withNewStrategy()
+					.withType("Docker")
+					.withNewDockerStrategy()
 					.endDockerStrategy()
 				.endStrategy()
-                .withNewOutput()
-                    .withNewTo()
-                        .withKind("ImageStreamTag")
-                        .withName(format("%s:%s", appId, "latest"))
-                    .endTo()
-                .endOutput()
-            .endSpec()
-            .build();
-        //@formatter:on
+				.withNewOutput()
+					.withNewTo()
+						.withKind("ImageStreamTag")
+						.withName(String.format("%s:%s", appId, "latest"))
+					.endTo()
+				.endOutput()
+			.endSpec()
+			.build();
+		//@formatter:on
 	}
 
 	/**
 	 * Get the source context directory, the path where the Dockerfile is expected.
 	 * Defaults to src/main/docker
-	 * @param request
+	 * @param request application deployment spec
 	 * @return the context directory/path where the Dockerfile is expected
 	 */
 	protected String getContextDirectory(AppDeploymentRequest request) {
@@ -99,13 +118,13 @@ public class GitWithDockerBuildConfigStrategy extends BuildConfigStrategy
 	 * Attempt to get the Secret from the app deployment properties or from the deployer
 	 * environment variables. See
 	 * https://docs.openshift.org/latest/dev_guide/builds.html#using-secrets
-	 * @param request
+	 * @param request application deployment spec
 	 * @return a Secret if there is one available
 	 */
 	protected String getGitSourceSecret(AppDeploymentRequest request) {
 		return request.getDefinition().getProperties().getOrDefault(
 				OpenShiftApplicationPropertyKeys.OPENSHIFT_BUILD_GIT_SOURCE_SECRET,
-				getEnvironmentVariable(properties.getEnvironmentVariables(),
+				getEnvironmentVariable(this.properties.getEnvironmentVariables(),
 						OpenShiftApplicationPropertyKeys.OPENSHIFT_BUILD_GIT_SOURCE_SECRET));
 	}
 

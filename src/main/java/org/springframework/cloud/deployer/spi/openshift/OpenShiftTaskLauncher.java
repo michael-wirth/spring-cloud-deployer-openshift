@@ -1,21 +1,40 @@
-package org.springframework.cloud.deployer.spi.openshift;
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.google.common.collect.Maps;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.OpenShiftClient;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.cloud.deployer.spi.kubernetes.ContainerFactory;
-import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
-import org.springframework.cloud.deployer.spi.kubernetes.KubernetesTaskLauncher;
-import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
-import org.springframework.cloud.deployer.spi.task.TaskLauncher;
-import org.springframework.cloud.deployer.spi.task.TaskStatus;
+package org.springframework.cloud.deployer.spi.openshift;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.fabric8.openshift.client.OpenShiftClient;
+
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.kubernetes.ContainerFactory;
+import org.springframework.cloud.deployer.spi.kubernetes.KubernetesTaskLauncher;
+import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
+import org.springframework.cloud.deployer.spi.task.TaskLauncher;
+import org.springframework.cloud.deployer.spi.task.TaskStatus;
+
+/**
+ * A task launcher that targets Openshift.
+ *
+ * @author Donovan Muller
+ */
 public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 		implements TaskLauncher {
 
@@ -32,7 +51,7 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 
 	@Override
 	public String launch(AppDeploymentRequest request) {
-		logger.info(String.format("Launching task: '%s'", request.getDefinition()));
+		this.logger.info(String.format("Launching task: '%s'", request.getDefinition()));
 
 		String appId = createDeploymentId(request);
 
@@ -45,8 +64,8 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 
 		List<ObjectFactory> factories = populateOpenShiftObjects(taskDeploymentRequest,
 				appId);
-		factories.forEach(factory -> factory.addObject(taskDeploymentRequest, appId));
-		factories.forEach(factory -> factory.applyObject(taskDeploymentRequest, appId));
+		factories.forEach((factory) -> factory.addObject(taskDeploymentRequest, appId));
+		factories.forEach((factory) -> factory.applyObject(taskDeploymentRequest, appId));
 
 		return appId;
 	}
@@ -62,8 +81,8 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 
 	@Override
 	public void cleanup(String id) {
-		client.builds().list().getItems()
-				.forEach(build -> client.builds().withName(id).cascading(true).delete());
+		this.client.builds().list().getItems().forEach(
+				(build) -> this.client.builds().withName(id).cascading(true).delete());
 
 		super.cleanup(id);
 	}
@@ -79,8 +98,8 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 
 	/**
 	 * Populate the OpenShift objects that will be created/updated and applied.
-	 * @param request
-	 * @param taskId
+	 * @param request application deployment sped
+	 * @param taskId for deployment
 	 * @return list of {@link ObjectFactory}'s
 	 */
 	protected List<ObjectFactory> populateOpenShiftObjects(AppDeploymentRequest request,
@@ -110,11 +129,10 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 	}
 
 	protected OpenShiftClient getClient() {
-		return client;
+		return this.client;
 	}
 
 	protected OpenShiftDeployerProperties getProperties() {
-		return openShiftDeployerProperties;
+		return this.openShiftDeployerProperties;
 	}
-
 }

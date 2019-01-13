@@ -1,19 +1,40 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift.resources.service;
 
 import java.util.Map;
 import java.util.Optional;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
-import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import org.apache.commons.lang3.StringUtils;
 
+import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeploymentPropertyKeys;
+import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
+
+/**
+ * Service factory.
+ *
+ * @author Donovan Muller
+ */
 public class ServiceFactory implements ObjectFactory<Service> {
 
 	private OpenShiftClient client;
@@ -31,7 +52,7 @@ public class ServiceFactory implements ObjectFactory<Service> {
 
 	@Override
 	public Service addObject(AppDeploymentRequest request, String appId) {
-		Service service = build(request, appId, port, labels);
+		Service service = build(request, appId, this.port, this.labels);
 
 		if (getExisting(appId).isPresent()) {
 			// cannot patch a Service. Delete it, then recreate
@@ -52,7 +73,7 @@ public class ServiceFactory implements ObjectFactory<Service> {
 
 	protected Optional<Service> getExisting(String name) {
 		//@formatter:off
-		return Optional.ofNullable(client.services()
+		return Optional.ofNullable(this.client.services()
 			.withName(name)
 			.fromServer()
 			.get());
@@ -82,14 +103,14 @@ public class ServiceFactory implements ObjectFactory<Service> {
 	}
 
 	private ServicePort buildServicePort() {
-		return new ServicePortBuilder().withPort(port).withNewTargetPort(port).build();
+		return new ServicePortBuilder().withPort(this.port).withNewTargetPort(this.port).build();
 	}
 
 	private ServicePort buildServiceNodePort(AppDeploymentRequest request) {
 		String createNodePort = request.getDeploymentProperties().getOrDefault(
 				OpenShiftDeploymentPropertyKeys.OPENSHIFT_CREATE_NODE_PORT,
 				StringUtils.EMPTY);
-		return new ServicePortBuilder().withPort(port)
+		return new ServicePortBuilder().withPort(this.port)
 				.withNodePort(StringUtils.isNumeric(createNodePort)
 						? Integer.parseInt(createNodePort) : null)
 				.build();

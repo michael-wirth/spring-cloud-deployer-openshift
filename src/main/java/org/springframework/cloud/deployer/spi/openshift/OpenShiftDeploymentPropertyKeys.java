@@ -1,10 +1,31 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift;
 
+/**
+ * Deployment key constants for Openshift.
+ *
+ * @author Donovan Muller
+ */
 public interface OpenShiftDeploymentPropertyKeys {
 
 	/**
 	 * If true, will force an OpenShift {@link io.fabric8.openshift.api.model.Build} for
-	 * application and ignore existing Builds
+	 * application and ignore existing Builds.
 	 */
 	String OPENSHIFT_BUILD_FORCE = "spring.cloud.deployer.openshift.forceBuild";
 
@@ -82,7 +103,7 @@ public interface OpenShiftDeploymentPropertyKeys {
 	 * default routing subdomain (see
 	 * {@link OpenShiftDeployerProperties#defaultRoutingSubdomain}). See
 	 * https://docs.openshift.org/latest/architecture/core_concepts/routes.html#route-
-	 * hostnames
+	 * hostnames.
 	 */
 	String OPENSHIFT_DEPLOYMENT_ROUTE_HOSTNAME = "spring.cloud.deployer.openshift.deployment.route.host";
 

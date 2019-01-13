@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift;
 
 import org.slf4j.Logger;
@@ -10,6 +26,11 @@ import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.core.RuntimeEnvironmentInfo;
 import org.springframework.cloud.deployer.spi.openshift.maven.MavenOpenShiftAppDeployer;
 
+/**
+ * This AppDeployer handles handles Maven-, Project- and Dockerresources.
+ *
+ * @author Donovan Muller
+ */
 public class ResourceAwareOpenShiftAppDeployer implements AppDeployer {
 
 	private static final Logger logger = LoggerFactory
@@ -31,16 +52,16 @@ public class ResourceAwareOpenShiftAppDeployer implements AppDeployer {
 
 		try {
 			if (request.getResource() instanceof MavenResource) {
-				appId = mavenOpenShiftAppDeployer.deploy(request);
+				appId = this.mavenOpenShiftAppDeployer.deploy(request);
 			}
 			else {
-				appId = openShiftAppDeployer.deploy(request);
+				appId = this.openShiftAppDeployer.deploy(request);
 			}
 		}
-		catch (Exception e) {
+		catch (Exception ex) {
 			logger.error(String.format(
-					"Error deploying application deployment request: %s", request), e);
-			throw e;
+					"Error deploying application deployment request: %s", request), ex);
+			throw ex;
 		}
 
 		return appId;
@@ -48,17 +69,17 @@ public class ResourceAwareOpenShiftAppDeployer implements AppDeployer {
 
 	@Override
 	public void undeploy(String appId) {
-		openShiftAppDeployer.undeploy(appId);
+		this.openShiftAppDeployer.undeploy(appId);
 	}
 
 	@Override
 	public AppStatus status(String appId) {
-		return openShiftAppDeployer.status(appId);
+		return this.openShiftAppDeployer.status(appId);
 	}
 
 	@Override
 	public RuntimeEnvironmentInfo environmentInfo() {
-		return openShiftAppDeployer.environmentInfo();
+		return this.openShiftAppDeployer.environmentInfo();
 	}
 
 }

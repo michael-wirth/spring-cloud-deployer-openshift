@@ -1,10 +1,32 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift;
 
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.DeploymentConfig;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
 
+/**
+ * Openshift Deployer properties.
+ *
+ * @author Donovan Muller
+ */
 @ConfigurationProperties(prefix = "spring.cloud.deployer.openshift")
 public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 
@@ -65,7 +87,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	private String containerCommand = "/usr/local/s2i/run";
 
 	public boolean isForceBuild() {
-		return forceBuild;
+		return this.forceBuild;
 	}
 
 	public void setForceBuild(boolean forceBuild) {
@@ -73,7 +95,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getDefaultRoutingSubdomain() {
-		return defaultRoutingSubdomain;
+		return this.defaultRoutingSubdomain;
 	}
 
 	public void setDefaultRoutingSubdomain(String defaultRoutingSubdomain) {
@@ -81,7 +103,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getDefaultImageTag() {
-		return defaultImageTag;
+		return this.defaultImageTag;
 	}
 
 	public void setDefaultImageTag(final String defaultImageTag) {
@@ -93,7 +115,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public long getUndeployDelay() {
-		return undeployDelay;
+		return this.undeployDelay;
 	}
 
 	public void setUndeployDelay(final long undeployDelay) {
@@ -101,7 +123,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getDefaultDockerfile() {
-		return defaultDockerfile;
+		return this.defaultDockerfile;
 	}
 
 	public void setDefaultDockerfile(final String defaultDockerfile) {
@@ -109,7 +131,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getDockerRegistryOverride() {
-		return dockerRegistryOverride;
+		return this.dockerRegistryOverride;
 	}
 
 	public void setDockerRegistryOverride(String dockerRegistryOverride) {
@@ -117,7 +139,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getImageProjectName() {
-		return imageProjectName;
+		return this.imageProjectName;
 	}
 
 	public void setImageProjectName(String imageProjectName) {
@@ -125,7 +147,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getDefaultS2iImage() {
-		return defaultS2iImage;
+		return this.defaultS2iImage;
 	}
 
 	public void setDefaultS2iImage(String defaultS2iImage) {
@@ -133,7 +155,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	}
 
 	public String getContainerCommand() {
-		return containerCommand;
+		return this.containerCommand;
 	}
 
 	public void setContainerCommand(String containerCommand) {

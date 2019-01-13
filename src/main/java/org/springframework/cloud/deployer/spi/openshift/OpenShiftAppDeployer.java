@@ -1,31 +1,66 @@
+/*
+ * Copyright 2018-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.deployer.spi.openshift;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import com.google.common.collect.Iterables;
-import com.google.common.escape.Escaper;
-import com.google.common.escape.Escapers;
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.cloud.deployer.spi.kubernetes.*;
+import org.springframework.cloud.deployer.spi.kubernetes.ContainerConfiguration;
+import org.springframework.cloud.deployer.spi.kubernetes.ContainerFactory;
+import org.springframework.cloud.deployer.spi.kubernetes.ImagePullPolicy;
+import org.springframework.cloud.deployer.spi.kubernetes.KubernetesAppDeployer;
+import org.springframework.cloud.deployer.spi.kubernetes.KubernetesDeployerProperties;
 import org.springframework.cloud.deployer.spi.openshift.resources.ObjectFactory;
 import org.springframework.cloud.deployer.spi.openshift.resources.deploymentConfig.DeploymentConfigFactory;
-import org.springframework.cloud.deployer.spi.openshift.resources.deploymentConfig.DeploymentConfigWithIndexSuppportFactory;
+import org.springframework.cloud.deployer.spi.openshift.resources.deploymentConfig.DeploymentConfigWithIndexSupportFactory;
 import org.springframework.cloud.deployer.spi.openshift.resources.route.RouteFactory;
 import org.springframework.cloud.deployer.spi.openshift.resources.service.ServiceWithIndexSupportFactory;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
-
+/**
+ * A deployer that targets Openshift.
+ *
+ * @author Donovan Muller
+ */
 public class OpenShiftAppDeployer extends KubernetesAppDeployer
 		implements AppDeployer, OpenShiftSupport {
 
@@ -65,8 +100,8 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 
 		List<ObjectFactory> factories = populateOpenShiftObjectsForDeployment(
 				compatibleRequest, appId);
-		factories.forEach(factory -> factory.addObject(compatibleRequest, appId));
-		factories.forEach(factory -> factory.applyObject(compatibleRequest, appId));
+		factories.forEach((factory) -> factory.addObject(compatibleRequest, appId));
+		factories.forEach((factory) -> factory.applyObject(compatibleRequest, appId));
 
 		return appId;
 	}
@@ -82,13 +117,14 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 		}
 
 		// don't delete BuildConfig/Builds
-		client.services().withLabelIn(SPRING_APP_KEY, appId).delete();
-		client.routes().withLabelIn(SPRING_APP_KEY, appId).delete();
-		for (DeploymentConfig deploymentConfig : client.deploymentConfigs()
+		this.client.services().withLabelIn(SPRING_APP_KEY, appId).delete();
+		this.client.routes().withLabelIn(SPRING_APP_KEY, appId).delete();
+		for (DeploymentConfig deploymentConfig : this.client.deploymentConfigs()
 				.withLabelIn(SPRING_APP_KEY, appId).list().getItems()) {
-			scaleDownPod(client, deploymentConfig);
-			client.deploymentConfigs().withName(deploymentConfig.getMetadata().getName())
-					.cascading(true).withGracePeriod(0).delete();
+			scaleDownPod(this.client, deploymentConfig);
+			this.client.deploymentConfigs()
+					.withName(deploymentConfig.getMetadata().getName()).cascading(true)
+					.withGracePeriod(0).delete();
 		}
 
 		/**
@@ -99,8 +135,8 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 		 */
 		// @formatter:off
 		this.client.pods().withLabelIn(SPRING_APP_KEY, appId).list().getItems().stream()
-			.peek(pod -> logger.debug("Deleting Pod: {}", pod.getMetadata().getName()))
-			.forEach(pod -> this.client.pods()
+			.peek((pod) -> logger.debug("Deleting Pod: {}", pod.getMetadata().getName()))
+			.forEach((pod) -> this.client.pods()
 				.withName(pod.getMetadata().getName())
 				.cascading(true)
 				.withGracePeriod(0)
@@ -110,32 +146,33 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 		try {
 			// Give some time for resources to be deleted.
 			// This is nasty and probably should be investigated for a better solution
-			Thread.sleep(openShiftDeployerProperties.getUndeployDelay());
+			Thread.sleep(this.openShiftDeployerProperties.getUndeployDelay());
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException ex) {
 		}
 	}
 
 	/**
 	 * An {@link OpenShiftAppInstanceStatus} includes the Build phases in addition to the
 	 * implementation in
-	 * {@link org.springframework.cloud.deployer.spi.kubernetes.AbstractKubernetesDeployer#buildAppStatus}
+	 * {@link org.springframework.cloud.deployer.spi.kubernetes.AbstractKubernetesDeployer#buildAppStatus}.
 	 */
 	@Override
 	protected AppStatus buildAppStatus(String appId, PodList list, ServiceList services) {
 		AppStatus.Builder statusBuilder = AppStatus.of(appId);
 
-		List<Build> builds = client.builds().withLabelIn(SPRING_APP_KEY, appId).list()
-				.getItems();
+		List<Build> builds = this.client.builds().withLabelIn(SPRING_APP_KEY, appId)
+				.list().getItems();
 		Build build = (builds.isEmpty()) ? null : Iterables.getLast(builds);
 
 		if (list == null) {
 			statusBuilder.with(new OpenShiftAppInstanceStatus(null,
-					openShiftDeployerProperties, build));
+					this.openShiftDeployerProperties, build));
 		}
 		else if (list.getItems().isEmpty()) {
 			this.client.replicationControllers().withLabelIn(SPRING_APP_KEY, appId).list()
-					.getItems().stream().findFirst().ifPresent(replicationController -> {
+					.getItems().stream().findFirst()
+					.ifPresent((replicationController) -> {
 						if (replicationController.getMetadata().getAnnotations()
 								.get("openshift.io/deployment.phase").equals("Failed")) {
 							statusBuilder.generalState(DeploymentState.failed);
@@ -145,7 +182,7 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 		else {
 			for (Pod pod : list.getItems()) {
 				statusBuilder.with(new OpenShiftAppInstanceStatus(pod,
-						openShiftDeployerProperties, build));
+						this.openShiftDeployerProperties, build));
 			}
 		}
 
@@ -155,8 +192,8 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 	/**
 	 * Populate the OpenShift objects that will be created/updated and applied when
 	 * deploying an app.
-	 * @param request
-	 * @param appId
+	 * @param request appDeploymentRequest
+	 * @param appId appId
 	 * @return list of {@link ObjectFactory}'s
 	 */
 	protected List<ObjectFactory> populateOpenShiftObjectsForDeployment(
@@ -177,7 +214,7 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 				new ServiceWithIndexSupportFactory(getClient(), externalPort, labels));
 
 		if (createRoute(request)) {
-			factories.add(new RouteFactory(getClient(), openShiftDeployerProperties,
+			factories.add(new RouteFactory(getClient(), this.openShiftDeployerProperties,
 					externalPort, labels));
 		}
 
@@ -187,20 +224,20 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 	protected DeploymentConfigFactory getDeploymentConfigFactory(
 			AppDeploymentRequest request, Map<String, String> labels,
 			Container container) {
-		return new DeploymentConfigWithIndexSuppportFactory(getClient(),
-				openShiftDeployerProperties, container, labels,
+		return new DeploymentConfigWithIndexSupportFactory(getClient(),
+				this.openShiftDeployerProperties, container, labels,
 				getResourceRequirements(request), getImagePullPolicy(request));
 	}
 
 	/**
 	 * Create an OpenShift Route if either of these two deployment properties are
-	 * specified:
+	 * specified.
 	 *
 	 * <ul>
 	 * <li>spring.cloud.deployer.kubernetes.createLoadBalancer</li>
 	 * <li>spring.cloud.deployer.openshift.createRoute</li>
 	 * </ul>
-	 * @param request
+	 * @param request appDeploymentRequest
 	 * @return true if the Route object should be created
 	 */
 	protected boolean createRoute(AppDeploymentRequest request) {
@@ -238,15 +275,15 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 	}
 
 	protected OpenShiftClient getClient() {
-		return client;
+		return this.client;
 	}
 
 	protected KubernetesDeployerProperties getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	protected ContainerFactory getContainerFactory() {
-		return containerFactory;
+		return this.containerFactory;
 	}
 
 	protected AppDeploymentRequest enableKubernetesDeployerCompatibility(
@@ -271,7 +308,7 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 		}
 	}
 
-	/**
+	/*
 	 * Scale down the pod first before deleting. If we don't scale down the Pod first, the
 	 * next deployment that requires a Build will result in the previous deployment being
 	 * scaled while the new build is on progress. The new build will trigger a deployment
@@ -281,15 +318,16 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 	private void scaleDownPod(OpenShiftClient client, DeploymentConfig deploymentConfig) {
 		Future<Object> scaleDownTask = null;
 		try {
-			scaleDownTask = executorService.submit(() -> client.deploymentConfigs()
+			scaleDownTask = this.executorService.submit(() -> this.client
+					.deploymentConfigs()
 					.withName(deploymentConfig.getMetadata().getName()).scale(0, true));
 			// TODO make this a deployer property
 			scaleDownTask.get(30, TimeUnit.SECONDS);
 		}
-		catch (TimeoutException e) {
+		catch (TimeoutException ex) {
 			scaleDownTask.cancel(true);
 		}
-		catch (InterruptedException | ExecutionException e) {
+		catch (InterruptedException | ExecutionException ex) {
 			throw new RuntimeException(e);
 		}
 	}
