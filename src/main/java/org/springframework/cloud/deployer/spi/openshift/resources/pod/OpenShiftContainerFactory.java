@@ -65,19 +65,19 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 		AppDeploymentRequest request = containerConfiguration.getAppDeploymentRequest();
 		if (request.getResource() instanceof DockerResource) {
 			try {
-				container = super.create(
-						new ContainerConfiguration(containerConfiguration.getAppId(),
-								new AppDeploymentRequest(request.getDefinition(),
-										new OverridableDockerResource(
-												request.getResource().getURI(),
-												this.properties.getDockerRegistryOverride(),
-												this.properties.getImageProjectName()),
-										request.getDeploymentProperties(),
-										request.getCommandlineArguments()))
-												.withHostNetwork(containerConfiguration
-														.isHostNetwork())
-												.withExternalPort(containerConfiguration
-														.getExternalPort()));
+				container = super.create(new ContainerConfiguration(
+						containerConfiguration.getAppId(),
+						new AppDeploymentRequest(request.getDefinition(),
+								new OverridableDockerResource(
+										request.getResource().getURI(),
+										this.properties.getDockerRegistryOverride(),
+										this.properties.getImageProjectName()),
+								request.getDeploymentProperties(),
+								request.getCommandlineArguments()))
+										.withHostNetwork(
+												containerConfiguration.isHostNetwork())
+										.withExternalPort(containerConfiguration
+												.getExternalPort()));
 			}
 			catch (IOException ex) {
 				throw new IllegalArgumentException(
@@ -107,8 +107,8 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 		// use the VolumeMountFactory to resolve VolumeMounts because it has richer
 		// support for things like using a Spring Cloud config server to resolve
 		// VolumeMounts
-		container.setVolumeMounts(
-				this.volumeMountFactory.addObject(request, containerConfiguration.getAppId()));
+		container.setVolumeMounts(this.volumeMountFactory.addObject(request,
+				containerConfiguration.getAppId()));
 
 		return container;
 	}
@@ -149,6 +149,7 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 						"Could not create masked URI for Maven build", ex);
 			}
 		}
+
 	}
 
 	private class OverridableDockerResource extends DockerResource {
@@ -181,13 +182,15 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 		public URI getURI() throws IOException {
 			try {
 				if (StringUtils.isNotBlank(this.dockerRegistry)) {
-					this.log.debug("Overriding docker registry with '{}' and project '{}'",
+					this.log.debug(
+							"Overriding docker registry with '{}' and project '{}'",
 							this.dockerRegistry, this.imageProjectName);
 					return new URIBuilder(super.getURI().toString()
 							.replaceFirst("docker:(.*?)/",
 									String.format("docker:%s/", this.dockerRegistry))
 							.replaceFirst("/(.*?)/",
-									String.format("/%s/", this.imageProjectName))).build();
+									String.format("/%s/", this.imageProjectName)))
+											.build();
 				}
 				else {
 					return super.getURI();
@@ -198,5 +201,7 @@ public class OpenShiftContainerFactory extends DefaultContainerFactory
 						"Could not create masked URI for Maven build", ex);
 			}
 		}
+
 	}
+
 }

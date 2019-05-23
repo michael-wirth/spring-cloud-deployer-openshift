@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.deployer.spi.kubernetes.ContainerConfiguration;
 import org.springframework.cloud.deployer.spi.openshift.OpenShiftDeployerProperties;
 import org.springframework.cloud.deployer.spi.openshift.resources.volumes.VolumeMountFactory;
 import org.springframework.core.io.Resource;
@@ -25,8 +26,9 @@ public class OpenShiftContainerFactoryTest {
 
 		AppDeploymentRequest appDeploymentRequestShell = new AppDeploymentRequest(
 				definition, resource, null);
-		Container container = containerFactory.create("app-test",
-				appDeploymentRequestShell, null, null, false);
+		ContainerConfiguration containerConfiguration = new ContainerConfiguration(
+				"app-test", appDeploymentRequestShell);
+		Container container = containerFactory.create(containerConfiguration);
 
 		assertNotNull(container);
 		assertThat(container.getImage()).isEqualTo("app-test");

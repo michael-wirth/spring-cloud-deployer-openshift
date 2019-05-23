@@ -128,7 +128,7 @@ public class MavenOpenShiftAppDeployerIntegrationTest
 		Resource resource = testApplication();
 		Map<String, String> props = new HashMap<>();
 		// setting to small memory value will cause app to fail to be deployed
-		props.put("spring.cloud.deployer.kubernetes.memory", "8Mi");
+		props.put("spring.cloud.deployer.openshift.limits.memory", "8Mi");
 		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
 				props);
 

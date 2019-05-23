@@ -84,8 +84,8 @@ public class WatchingBuildConfigStrategy extends BuildConfigStrategy {
 
 					@Override
 					public void eventReceived(Action action, Build resource) {
-						logger.trace(
-								"Received event '{}' for build: '{}'", action, resource);
+						logger.trace("Received event '{}' for build: '{}'", action,
+								resource);
 
 						WatchingBuildConfigStrategy.this.callback.callback(resource,
 								WatchingBuildConfigStrategy.this.watch);
@@ -105,4 +105,5 @@ public class WatchingBuildConfigStrategy extends BuildConfigStrategy {
 		void callback(R r, Watch watch);
 
 	}
+
 }

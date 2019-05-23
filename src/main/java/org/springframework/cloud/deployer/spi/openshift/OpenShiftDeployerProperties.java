@@ -82,7 +82,7 @@ public class OpenShiftDeployerProperties extends KubernetesDeployerProperties {
 	 * The default S2I build image to use for Maven resource. See
 	 * https://github.com/fabric8io-images/s2i
 	 */
-	private String defaultS2iImage = "tagedieb/s2i-java-centos:3.0.1";
+	private String defaultS2iImage = "fabric8/s2i-java:latest-java11";
 
 	private String containerCommand = "/usr/local/s2i/run";
 

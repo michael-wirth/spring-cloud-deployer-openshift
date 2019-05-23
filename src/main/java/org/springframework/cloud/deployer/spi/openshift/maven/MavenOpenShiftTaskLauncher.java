@@ -82,8 +82,8 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 			factories.add(new ImageStreamFactory(getClient()));
 
 			BuildStrategies buildStrategies = new BuildStrategies(this.mavenProperties,
-					this.openShiftDeployerProperties, this.mavenResourceJarExtractor, this.resourceHash,
-					getClient());
+					this.openShiftDeployerProperties, this.mavenResourceJarExtractor,
+					this.resourceHash, getClient());
 			BuildConfigStrategy buildStrategy = buildStrategies.chooseBuildStrategy(
 					request, createIdMap(taskId, request), mavenResource);
 			WatchingBuildConfigStrategy watchingBuildConfigStrategy = new WatchingBuildConfigStrategy(
@@ -127,8 +127,9 @@ public class MavenOpenShiftTaskLauncher extends OpenShiftTaskLauncher {
 							.getEnv().stream()
 							.filter((envVar) -> envVar.getName().equals(
 									MavenBuildConfigFactory.SPRING_BUILD_ID_ENV_VAR)
-									&& envVar.getValue().equals(
-											this.resourceHash.hashResource(mavenResource))))
+									&& envVar.getValue()
+											.equals(this.resourceHash
+													.hashResource(mavenResource))))
 					.count() > 0;
 		}
 

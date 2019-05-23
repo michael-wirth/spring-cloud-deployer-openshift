@@ -72,7 +72,8 @@ public class RouteFactory implements ObjectFactory<Route> {
 	}
 
 	protected Optional<Route> getExisting(String name) {
-		return Optional.ofNullable(this.client.routes().withName(name).fromServer().get());
+		return Optional
+				.ofNullable(this.client.routes().withName(name).fromServer().get());
 	}
 
 	protected Route build(AppDeploymentRequest request, String appId, Integer port,

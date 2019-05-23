@@ -70,8 +70,8 @@ public class DeploymentConfigFactory
 
 	@Override
 	public DeploymentConfig addObject(AppDeploymentRequest request, String appId) {
-		DeploymentConfig deploymentConfig = build(request, appId, this.container, this.labels,
-				this.resourceRequirements, this.imagePullPolicy);
+		DeploymentConfig deploymentConfig = build(request, appId, this.container,
+				this.labels, this.resourceRequirements, this.imagePullPolicy);
 
 		if (getExisting(appId).isPresent()) {
 			deploymentConfig = this.client.deploymentConfigs()
@@ -89,8 +89,8 @@ public class DeploymentConfigFactory
 	}
 
 	protected Optional<DeploymentConfig> getExisting(String name) {
-		return Optional
-				.ofNullable(this.client.deploymentConfigs().withName(name).fromServer().get());
+		return Optional.ofNullable(
+				this.client.deploymentConfigs().withName(name).fromServer().get());
 	}
 
 	protected DeploymentConfig build(AppDeploymentRequest request, String appId,

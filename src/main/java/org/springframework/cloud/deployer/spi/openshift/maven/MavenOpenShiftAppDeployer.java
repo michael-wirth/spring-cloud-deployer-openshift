@@ -157,8 +157,7 @@ public class MavenOpenShiftAppDeployer extends OpenShiftAppDeployer {
 					String.format("Build complete: '%s'", build.getMetadata().getName()));
 
 			withIndexedDeployment(appId, request, (id, deploymentRequest) -> {
-				logger
-						.info(String.format("Rolling out latest deployment of '%s'", id));
+				logger.info(String.format("Rolling out latest deployment of '%s'", id));
 				getClient().deploymentConfigs().withName(id).deployLatest();
 			});
 

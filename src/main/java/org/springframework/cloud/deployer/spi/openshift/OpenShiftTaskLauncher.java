@@ -135,4 +135,5 @@ public class OpenShiftTaskLauncher extends KubernetesTaskLauncher
 	protected OpenShiftDeployerProperties getProperties() {
 		return this.openShiftDeployerProperties;
 	}
+
 }

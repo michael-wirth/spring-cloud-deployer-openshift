@@ -7,5 +7,4 @@ spring:
 
     deployer:
       openshift:
-        environmentVariables:
-
+        namespace: myproject

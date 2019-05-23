@@ -103,7 +103,8 @@ public class ServiceFactory implements ObjectFactory<Service> {
 	}
 
 	private ServicePort buildServicePort() {
-		return new ServicePortBuilder().withPort(this.port).withNewTargetPort(this.port).build();
+		return new ServicePortBuilder().withPort(this.port).withNewTargetPort(this.port)
+				.build();
 	}
 
 	private ServicePort buildServiceNodePort(AppDeploymentRequest request) {

@@ -72,13 +72,16 @@ public class BuildStrategies {
 		Map<String, String> applicationProperties = request.getDefinition()
 				.getProperties();
 
-		return Stream.of(
-				dockerfileFromProvidedGitRepoBuildConfig(applicationProperties, labels),
-				dockerfileFromRemoteGitRepoBuildConfig(
-						new OpenShiftMavenDeploymentRequest(request, this.mavenProperties),
-						mavenResource, request, labels),
-				dockerfileBuildConfig(request, labels)).filter(Optional::isPresent)
-				.findFirst().orElse(Optional.of(new S2iBinaryInputBuildConfigStrategy(
+		return Stream
+				.of(dockerfileFromProvidedGitRepoBuildConfig(applicationProperties,
+						labels),
+						dockerfileFromRemoteGitRepoBuildConfig(
+								new OpenShiftMavenDeploymentRequest(request,
+										this.mavenProperties),
+								mavenResource, request, labels),
+						dockerfileBuildConfig(request, labels))
+				.filter(Optional::isPresent).findFirst()
+				.orElse(Optional.of(new S2iBinaryInputBuildConfigStrategy(
 						this.deployerProperties, this.client, labels, mavenResource)))
 				.get();
 	}
@@ -118,9 +121,10 @@ public class BuildStrategies {
 
 		GitReference gitReference = openShiftRequest.getGitReference();
 		try {
-			if (openShiftRequest.isMavenProjectExtractable() && this.mavenResourceJarExtractor
-					.extractFile(mavenResource, dockerfileLocation(request))
-					.isPresent()) {
+			if (openShiftRequest.isMavenProjectExtractable()
+					&& this.mavenResourceJarExtractor
+							.extractFile(mavenResource, dockerfileLocation(request))
+							.isPresent()) {
 				/**
 				 * extract Git URI and ref from <scm><connection>...</connection></scm>
 				 * and <scm><tag>...</tag></scm> by parsing the Maven POM and use those
@@ -129,9 +133,9 @@ public class BuildStrategies {
 				 */
 				MavenBuildConfigFactory mavenBuildConfigFactory = new MavenBuildConfigFactory(
 						this.deployerProperties, this.resourceHash, this.mavenProperties);
-				buildConfigFactory = Optional
-						.of(new GitWithDockerBuildConfigStrategy(mavenBuildConfigFactory,
-								gitReference, this.deployerProperties, this.client, labels));
+				buildConfigFactory = Optional.of(new GitWithDockerBuildConfigStrategy(
+						mavenBuildConfigFactory, gitReference, this.deployerProperties,
+						this.client, labels));
 			}
 		}
 		catch (IOException ex) {
@@ -151,7 +155,8 @@ public class BuildStrategies {
 					this.deployerProperties, this.resourceHash, this.mavenProperties);
 			buildConfigFactory = Optional
 					.of(new MavenDockerfileWithDockerBuildConfigStrategy(
-							mavenBuildConfigFactory, this.deployerProperties, this.client, labels));
+							mavenBuildConfigFactory, this.deployerProperties, this.client,
+							labels));
 		}
 
 		return buildConfigFactory;

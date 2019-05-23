@@ -93,6 +93,7 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 
 		String appId = createDeploymentId(compatibleRequest);
 
+		System.out.println(status(appId));
 		if (!status(appId).getState().equals(DeploymentState.unknown)) {
 			throw new IllegalStateException(
 					String.format("App '%s' is already deployed", appId));
@@ -328,7 +329,7 @@ public class OpenShiftAppDeployer extends KubernetesAppDeployer
 			scaleDownTask.cancel(true);
 		}
 		catch (InterruptedException | ExecutionException ex) {
-			throw new RuntimeException(e);
+			throw new RuntimeException(ex);
 		}
 	}
 
