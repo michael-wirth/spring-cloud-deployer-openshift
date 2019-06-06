@@ -154,7 +154,7 @@ public class MavenOpenShiftAppDeployer extends OpenShiftAppDeployer {
 			AppDeploymentRequest request) {
 		if (build.getStatus().getPhase().equals("Complete")) {
 			logger.info(
-					String.format("Build complete: '%s'", build.getMetadata().getName()));
+					String.format("Build complete: '%s', image: '%s'", build.getMetadata().getName(), build.getStatus().getOutputDockerImageReference()));
 
 			withIndexedDeployment(appId, request, (id, deploymentRequest) -> {
 				logger.info(String.format("Rolling out latest deployment of '%s'", id));

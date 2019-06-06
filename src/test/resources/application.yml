@@ -7,4 +7,13 @@ spring:
 
     deployer:
       openshift:
-        namespace: myproject
+        namespace: scdf
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          deployer: trace
+    io:
+      fabric8: trace
